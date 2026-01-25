@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Local settings (contains API keys) - copy from settings.template.md
+settings.local.md
+
+# Debug logs
+.claude/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
