@@ -78,19 +78,19 @@ describe('buildReviewPrompt', () => {
   it('should include all review criteria', () => {
     const prompt = buildReviewPrompt('test')
 
-    expect(prompt).toContain('Clarity')
+    expect(prompt).toContain('Codebase Grounding')
+    expect(prompt).toContain('Clarity of Thinking')
     expect(prompt).toContain('Completeness')
     expect(prompt).toContain('Feasibility')
-    expect(prompt).toContain('Dependencies')
-    expect(prompt).toContain('Testing')
+    expect(prompt).toContain('Testability')
   })
 
   it('should wrap content with markers', () => {
-    const content = 'Plan content here'
+    const content = 'Document content here'
     const prompt = buildReviewPrompt(content)
 
     expect(prompt).toContain('Document content:')
-    expect(prompt).toContain('---\nPlan content here\n---')
+    expect(prompt).toContain('---\nDocument content here\n---')
   })
 })
 

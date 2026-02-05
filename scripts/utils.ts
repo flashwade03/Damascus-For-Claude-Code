@@ -110,20 +110,21 @@ export function parseSettings(settingsFilePath: string): Settings {
  * Build review prompt for plan content
  */
 export function buildReviewPrompt(content: string): string {
-  return `Review the following implementation plan and provide feedback:
+  return `Review the following implementation plan. A good plan is grounded in the actual codebase — it references real files, functions, and patterns rather than giving generic advice.
 
-1. Clarity: Are requirements clearly defined?
-2. Completeness: Are there any missing items?
-3. Feasibility: Is it technically feasible?
-4. Dependencies: Are dependencies clearly identified?
-5. Testing: Is a test plan included?
+Evaluate:
+1. Codebase Grounding: Does the plan reference specific code? Or could it apply to any project?
+2. Clarity of Thinking: Is the reasoning coherent? Is the approach well-justified?
+3. Completeness: Are there obvious gaps — missing error handling, untested paths, ignored edge cases?
+4. Feasibility: Is the approach technically sound?
+5. Testability: Does the plan address how we'll know it works?
 
 Document content:
 ---
 ${content}
 ---
 
-Provide feedback in concise bullet points.`
+Provide feedback in concise bullet points. Distinguish critical issues from minor suggestions.`
 }
 
 /**

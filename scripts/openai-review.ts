@@ -31,7 +31,7 @@ async function callOpenAIAPI(prompt: string, apiKey: string, model: string): Pro
     ? 'https://api.openai.com/v1/responses'
     : 'https://api.openai.com/v1/chat/completions'
 
-  const systemPrompt = 'You are a technical plan reviewer. Provide constructive, actionable feedback.'
+  const systemPrompt = 'You are a technical document reviewer. Provide constructive, actionable feedback.'
 
   const payload = isResponsesAPI
     ? {

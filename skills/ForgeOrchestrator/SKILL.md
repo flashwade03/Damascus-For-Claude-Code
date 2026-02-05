@@ -1,51 +1,116 @@
 ---
 name: Forge Orchestrator
-description: Damascus workflow orchestrator. Used when executing /forge command. Forges plans and iterates until approved.
+description: Damascus workflow orchestrator. Used when executing /forge, /forge-plan, or /forge-doc commands. Forges documents through iterative multi-LLM review.
 aliases: [forge-orchestrator]
 ---
 
 # Forge Orchestrator
 
-Like forging Damascus steel, this orchestrator iteratively improves plans through a repeated refinement workflow.
+Like forging Damascus steel, this orchestrator iteratively improves documents through a repeated refinement workflow.
 
 ## Configuration
 
-**Max Iterations**: Parse from user input. If `-n [number]` is provided, use that number. Otherwise, default to **3**.
+Parse from user input:
+- `-n [number]` → `max_iterations` (default: 3)
+- `-o [path]` → `output_path` (default: none)
+- Remaining text → `task_description`
 
 Example:
-- Input: `-n 5 implement auth` → max_iterations=5, task="implement auth"
-- Input: `implement auth` → max_iterations=3, task="implement auth"
+- Input: `-n 5 -o docs/api/auth.md implement auth` → max_iterations=5, output_path="docs/api/auth.md", task="implement auth"
+- Input: `implement auth` → max_iterations=3, output_path=none, task="implement auth"
 
-## Session-Based File Naming
+## Mode Selection
 
-Before starting, get the session ID:
+The command passes a **Mode** field. Use it to select the authoring agent:
+
+| Mode | Agent | When |
+|------|-------|------|
+| `plan` | `damascus:planner` | Implementation plans (uses Anthropic plan mode) |
+| `doc` | `damascus:author` | Technical documents — API specs, architecture, design docs, etc. |
+| `auto` | Decide based on task | See auto-detection below |
+
+### Auto-Detection (mode=auto)
+
+Analyze the task description to choose the agent:
+
+- **Use `damascus:planner`** if the task is about implementing, building, or changing code (e.g., "implement auth", "refactor the database layer", "add caching")
+- **Use `damascus:author`** if the task is about writing a document (e.g., "write API spec", "architecture document", "design doc for caching strategy")
+- **When ambiguous**, default to `damascus:planner`
+
+## Output Path Resolution
+
+Determine where to save the document. Follow this priority:
+
+### Priority 1: Explicit `-o` flag
+If the user provided `-o [path]`, use that path exactly.
+
+### Priority 2: Detect project conventions
+Use Glob to scan the project for existing document directories:
+```
+Glob("docs/**/*.md")
+Glob("**/README.md")
+```
+
+If there's an existing structure (e.g., `docs/api/`, `docs/plans/`, `docs/architecture/`), choose the directory that best fits the document type.
+
+### Priority 3: Ask the user
+If you can't determine a good path, use AskUserQuestion. Suggest paths based on the document type and task description:
+```
+AskUserQuestion(
+  questions: [{
+    question: "Where should this document be saved?",
+    header: "Output path",
+    options: [
+      { label: "docs/{suggested_name}.md", description: "Based on document type" },
+      { label: "{another_relevant_path}.md", description: "Alternative location" }
+    ]
+  }]
+)
+```
+
+The user can pick a suggestion or type a custom path via "Other".
+
+### Review file
+The review file is always saved alongside the document: `{document_dir}/{document_name}.review.md`
+- Example: document at `docs/api/payment.md` → review at `docs/api/payment.review.md`
+
+## Session ID
+
+Get the session ID for tracking:
 ```bash
 npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/get-session-id.ts
 ```
 
-Returns JSON with `shortId` (first 8 characters of session ID).
-
-**File naming:**
-- Plan file: `docs/plans/{shortId}.md`
-- Review file: `docs/plans/{shortId}.review.md`
-
-If the plan file already exists, you are **refining** an existing plan.
+Returns JSON with `shortId` (first 8 characters of session ID). Used for default file naming and metadata.
 
 ## Workflow
 
 ```
     ┌─────────────────────────────────────────┐
-    │  Get Session ID (get-session-id.ts)     │
+    │  Get Session ID                         │
     └────────────────┬────────────────────────┘
                      ▼
     ┌─────────────────────────────────────────┐
-    │  Task(damascus:planner)                 │◀──────┐
-    │  Create plan draft                      │       │
+    │  Select Mode (plan / doc / auto)        │
+    └────────────────┬────────────────────────┘
+                     ▼
+    ┌─────────────────────────────────────────┐
+    │  Task(damascus:planner or :author)      │◀──────┐
+    │  Create draft                           │       │
+    └────────────────┬────────────────────────┘       │
+                     ▼                                │
+    ┌─────────────────────────────────────────┐       │
+    │  Resolve output path                    │       │
+    │  (-o flag > convention > ask user)      │       │
     └────────────────┬────────────────────────┘       │
                      ▼                                │
     ┌─────────────────────────────────────────┐       │
     │  Task(damascus:writer)                  │       │
     │  Save to file                           │       │
+    └────────────────┬────────────────────────┘       │
+                     ▼                                │
+    ┌─────────────────────────────────────────┐       │
+    │  Inject metadata (plan-metadata.sh)     │       │
     └────────────────┬────────────────────────┘       │
                      ▼                                │
     ┌─────────────────────────────────────────┐       │
@@ -67,54 +132,69 @@ If the plan file already exists, you are **refining** an existing plan.
                    DONE
 ```
 
-## Step 1: Call Planner
+**Note:** Output path resolution happens only once (first iteration). On subsequent iterations, the same path is reused.
 
-Use the Task tool to invoke the planner subagent:
+## Step 1: Create Draft
 
-**For new plan:**
+Use the Task tool to invoke the selected agent:
+
+**For new document:**
 ```
 Task(
-  subagent_type: "damascus:planner",
-  description: "Forge initial plan",
-  prompt: "Create a detailed implementation plan for: [USER_TASK]
+  subagent_type: "damascus:planner" or "damascus:author",
+  description: "Forge initial draft",
+  prompt: "[USER_TASK]
 
-Analyze the codebase and return the complete plan as markdown text.
-The plan will be saved to: docs/plans/{shortId}.md"
+Analyze the codebase and return the complete document as markdown text."
 )
 ```
 
-**For refinement (plan file exists):**
+**For refinement (subsequent iterations):**
 ```
 Task(
-  subagent_type: "damascus:planner",
-  description: "Refine plan based on feedback",
-  prompt: "Refine the implementation plan based on review feedback.
+  subagent_type: "damascus:planner" or "damascus:author",
+  description: "Refine draft based on feedback",
+  prompt: "Refine the document based on review feedback.
 
-Current plan: docs/plans/{shortId}.md
-[EXISTING PLAN CONTENT]
+Current document: [DOCUMENT_PATH]
+[EXISTING DOCUMENT CONTENT]
 
 Review feedback:
 [REVIEW FEEDBACK]
 
-Return the refined plan as markdown text."
+Return the refined document as markdown text."
 )
 ```
 
-## Step 2: Call Writer
+## Step 2: Resolve Output Path
 
-After planner returns the plan text, call the writer:
+On the first iteration only, determine the output path using the priority chain described above (-o flag > project conventions > ask user).
+
+## Step 3: Save to File
+
+After resolving the path, call the writer:
 
 ```
 Task(
   subagent_type: "damascus:writer",
-  description: "Record plan to file",
-  prompt: "Save the following plan to docs/plans/{shortId}.md:
+  description: "Save document to file",
+  prompt: "Save the following content to [DOCUMENT_PATH]:
 
-[PLAN TEXT FROM SMITH]"
+[DOCUMENT TEXT]"
 )
 ```
 
-## Step 3: Collect Reviews (Parallel)
+## Step 4: Inject Metadata
+
+After the writer saves the file, inject metadata (timestamps, session ID):
+
+```
+Bash(command: "echo '{\"file_path\": \"[DOCUMENT_PATH]\"}' | CLAUDE_SESSION_ID=[SESSION_ID] ${CLAUDE_PLUGIN_ROOT}/scripts/plan-metadata.sh")
+```
+
+This adds `created`, `modified`, and `session_id` fields to the document's frontmatter.
+
+## Step 5: Collect Reviews (Parallel)
 
 First, read `${CLAUDE_PLUGIN_ROOT}/settings.local.md` to check which inspectors are enabled:
 
@@ -130,24 +210,24 @@ Then launch enabled inspectors in parallel (single message, multiple tool calls)
 ```
 Task(
   subagent_type: "damascus:claude-reviewer",
-  description: "Claude inspection of plan",
-  prompt: "Review the implementation plan at: [PLAN FILE PATH]"
+  description: "Claude inspection",
+  prompt: "Review the document at: [DOCUMENT_PATH]"
 )
 ```
 
 **Gemini Inspector** (if enabled):
 ```
-Bash(command: "CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT} npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-review.ts [PLAN FILE PATH]")
+Bash(command: "CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT} npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/gemini-review.ts [DOCUMENT_PATH]")
 ```
 
 **OpenAI Inspector** (if enabled):
 ```
-Bash(command: "CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT} npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/openai-review.ts [PLAN FILE PATH]")
+Bash(command: "CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT} npx tsx ${CLAUDE_PLUGIN_ROOT}/scripts/openai-review.ts [DOCUMENT_PATH]")
 ```
 
-## Step 4: Consolidate Reviews
+## Step 6: Consolidate Reviews
 
-After all inspections complete, consolidate them into `docs/plans/{shortId}.review.md`.
+After all inspections complete, consolidate them into `{document_dir}/{document_name}.review.md`.
 
 **IMPORTANT**: Always overwrite the review file completely with new content:
 1. If file exists, use `Read` tool first (required before Write)
@@ -156,14 +236,15 @@ After all inspections complete, consolidate them into `docs/plans/{shortId}.revi
 
 ```markdown
 ---
-plan_file: docs/plans/{shortId}.md
+document_file: [DOCUMENT_PATH]
+mode: [plan | doc]
 revision: N
 reviewed_at: [timestamp]
 reviewers: [gemini, openai, claude]
 verdict: [APPROVED | NEEDS_REVISION]
 ---
 
-# Forge Review - [Plan Title]
+# Forge Review - [Document Title]
 
 ## Iteration N
 
@@ -191,49 +272,50 @@ verdict: [APPROVED | NEEDS_REVISION]
 ## Final Verdict: [APPROVED | NEEDS_REVISION]
 ```
 
-## Step 5: Judge
+## Step 7: Judge
 
 **APPROVED** if:
 - No critical issues mentioned
 - Only minor suggestions or style preferences
 
 **NEEDS_REVISION** if:
-- Missing required sections
-- Unclear requirements
+- Critical gaps identified by reviewers
+- Claims not grounded in the actual codebase
 - Technical feasibility concerns
-- Missing test plan
-- Dependency issues
+- Important aspects left unaddressed
 
-## Step 6: Loop or Complete
+## Step 8: Loop or Complete
 
 If **NEEDS_REVISION** and iteration < max_iterations:
 - Go back to Step 1
-- Include the review feedback in the planner prompt
+- Include the review feedback in the agent prompt
 
 If **APPROVED** or iteration >= max_iterations:
 - Report final status to user
-- Provide links to plan and review files
+- Provide links to document and review files
 
 ## Output Format
 
 After completion, report:
 
 ```
-## Forge Complete ⚔️
+## Forge Complete
 
 **Session**: {shortId}
+**Mode**: [plan | doc]
 **Status**: [APPROVED / NEEDS_REVISION (max iterations reached)]
 **Iterations**: N / max_iterations
-**Plan**: docs/plans/{shortId}.md
-**Review**: docs/plans/{shortId}.review.md
+**Document**: [DOCUMENT_PATH]
+**Review**: [REVIEW_PATH]
 
-[Brief summary of the plan]
+[Brief summary of the document]
 ```
 
 ## Important
 
 - Maximum iterations configurable via `-n` flag (default: 3)
-- Loop ends early if plan is APPROVED before max iterations
+- Loop ends early if document is APPROVED before max iterations
 - Always pass full review feedback when refining
 - Run inspectors in parallel when possible (single message, multiple tool calls)
 - Be objective in judging - don't soften critical feedback
+- Output path is resolved once on first iteration, then reused

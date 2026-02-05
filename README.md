@@ -1,49 +1,53 @@
 # Damascus
 
-> Like Damascus steel, plans become stronger through repeated forging.
+> Like Damascus steel, documents become stronger through repeated forging.
 
-A Claude Code plugin that iteratively improves plans through multi-LLM review.
+A Claude Code plugin that iteratively improves documents through multi-LLM review.
 
 ## Core Concept
 
 Damascus steel becomes stronger through repeated folding and hammering.
-Similarly, this plugin refines plans through review by multiple AI models.
+Similarly, this plugin refines documents through review by multiple AI models.
 
 ```
-/forge [-n max] [task description]
+/forge [-n max] [-o path] [task description]
 ```
 
 ## Design Philosophy
 
-Many plugins invest heavily in crafting sophisticated, skill-intensive prompts for planning. While I respect that approach, Damascus takes a different path.
+**Intent over technique.** Claude's built-in plan mode was carefully designed by Anthropic to work optimally with the model. Rather than trying to outsmart it with elaborate prompt engineering, Damascus trusts and leverages this native capability for implementation plans.
 
-**Intent over technique.** Claude's built-in plan mode was carefully designed by Anthropic to work optimally with the model. Rather than trying to outsmart it with elaborate prompt engineering, Damascus trusts and leverages this native capability as intended.
+**Explore first, write second.** Authoring agents deeply investigate the codebase before writing anything. The quality of a document is proportional to the depth of exploration.
 
-**Plan quality over iteration speed.** This plugin deliberately avoids agentic loops (automated implement-test-fix cycles). Depending on your environment, such loops may face constraints or require additional setup. More importantly, for users of black-box engines like Unity, rapid iteration isn't always practical — compile times, manual play-mode testing, and unpredictable engine behavior make automated trial-and-error costly. In such environments, investing in one well-forged plan upfront is far more effective than iterating through implementation mistakes.
+**Document quality over iteration speed.** This plugin deliberately avoids agentic loops (automated implement-test-fix cycles). Investing in one well-forged document upfront is far more effective than iterating through implementation mistakes.
 
-The plugin's value comes not from reinventing planning, but from the **iterative refinement loop** — using multiple LLM perspectives to strengthen what Claude's plan mode already does well.
+The plugin's value comes not from reinventing planning, but from the **iterative refinement loop** — using multiple LLM perspectives to strengthen what the authoring agents produce.
 
 ## Workflow
 
 ```
-    ┌──────────┐
-    │ Planner  │  Create plan
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │  Writer  │  Save to file
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │ Reviewers│  Gemini + OpenAI + Claude parallel review
-    └────┬─────┘
-         │
-    ┌────▼─────┐     ┌──────────┐
-    │  Judge   │────▶│ Approved │  Approved → Done
-    └────┬─────┘     └──────────┘
-         │ Needs Work
-         │
-    └────▶ Back to Planner (up to N times)
+    ┌──────────────┐
+    │ Planner or   │  Create draft
+    │ Author       │
+    └──────┬───────┘
+           │
+    ┌──────▼───────┐
+    │    Writer     │  Save to file
+    └──────┬───────┘
+           │
+    ┌──────▼───────┐
+    │   Metadata    │  Inject timestamps & session ID
+    └──────┬───────┘
+           │
+    ┌──────▼───────┐
+    │  Reviewers    │  Claude + Gemini + OpenAI (parallel)
+    └──────┬───────┘
+           │
+    ┌──────▼───────┐     ┌──────────┐
+    │    Judge      │────▶│ Approved │  Done
+    └──────┬───────┘     └──────────┘
+           │ Needs Work
+           └──▶ Back to Author (up to N times)
 ```
 
 ## Installation
@@ -79,33 +83,65 @@ enable_claude_review: true
 
 ## Usage
 
-### Basic Usage
+### Commands
+
+| Command | Mode | Description |
+|---------|------|-------------|
+| `/forge` | Auto-detect | Orchestrator decides based on task description |
+| `/forge-plan` | Plan | Implementation plans using Anthropic's plan mode |
+| `/forge-doc` | Document | Technical documents — API specs, architecture, design docs, etc. |
+
+### Examples
 
 ```bash
+# Auto-detect mode
 /forge implement user authentication
+/forge write API spec for the payment module
+
+# Explicit plan mode
+/forge-plan refactor the database layer
+/forge-plan -n 5 implement notification system
+
+# Explicit document mode
+/forge-doc architecture document for caching strategy
+/forge-doc -o docs/api/payment.md write API spec for payment
+
+# Options
+-n [max]    # Max forging iterations (default: 3)
+-o [path]   # Output file path (optional)
 ```
 
-### Specify Iteration Count
+### Output Path
 
-```bash
-/forge -n 5 complex architecture design   # Max 5 iterations
-/forge -n 2 simple feature                # Max 2 iterations
-```
+If `-o` is not specified, the orchestrator determines the path:
+1. Detects existing project conventions (e.g., `docs/api/`, `docs/plans/`)
+2. If uncertain, asks the user where to save
 
-- Default: 3 iterations
-- Early completion if approved
+### Agents
 
-### Output
+| Agent | Model | Role |
+|-------|-------|------|
+| **Planner** | Opus (plan mode) | Explores codebase, creates implementation plans |
+| **Author** | Opus | Explores codebase, writes technical documents |
+| **Writer** | Haiku | Saves content to file (no modifications) |
+| **Claude Reviewer** | Sonnet | Cross-references plan against actual codebase |
 
-- `docs/plans/{session-id}.md` - Forged plan
-- `docs/plans/{session-id}.review.md` - Review history
+### Review Criteria
+
+All reviewers evaluate documents against these dimensions:
+
+1. **Codebase Grounding** — Does it reference real files, functions, and patterns?
+2. **Clarity of Thinking** — Is the reasoning coherent and well-justified?
+3. **Completeness** — Are there obvious gaps?
+4. **Feasibility** — Is the approach technically sound?
+5. **Testability** — Does it address how we'll know it works?
 
 ## Configuration Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `gemini_api_key` | Gemini API key | - |
-| `gemini_model` | Gemini model | `gemini-2.0-flash` |
+| `gemini_model` | Gemini model | `gemini-3-flash-preview` |
 | `enable_gemini_review` | Enable Gemini | `true` |
 | `openai_api_key` | OpenAI API key | - |
 | `openai_model` | OpenAI model | `gpt-4o-mini` |
@@ -117,23 +153,30 @@ enable_claude_review: true
 ```
 damascus/
 ├── commands/
-│   └── forge.md              # /forge command
+│   ├── forge.md              # /forge command (auto-detect)
+│   ├── forge-plan.md         # /forge-plan command (plan mode)
+│   └── forge-doc.md          # /forge-doc command (documents)
 ├── skills/
 │   └── ForgeOrchestrator/    # Workflow orchestrator
 ├── agents/
-│   ├── planner.md            # Plan creation
+│   ├── planner.md            # Plan creation (plan mode)
+│   ├── author.md             # Document creation (general)
 │   ├── writer.md             # File saving
 │   └── claude-reviewer.md    # Claude review
 ├── scripts/
-│   ├── gemini-review.ts
-│   ├── openai-review.ts
-│   └── get-session-id.ts
+│   ├── gemini-review.ts      # Gemini API integration
+│   ├── openai-review.ts      # OpenAI API integration
+│   ├── get-session-id.ts     # Session ID retrieval
+│   └── plan-metadata.sh      # Metadata injection
+├── __tests__/
+│   └── utils.test.ts         # Utility tests
 ├── settings.local.md
 └── README.md
 ```
 
 ## Version
 
-- **2.0.0** Damascus - Multi-LLM forging workflow
+- **3.0.0** - General document forging with plan/doc modes
+- **2.0.0** - Multi-LLM forging workflow
 - **1.1.0** - Gemini review
 - **1.0.0** - Initial version

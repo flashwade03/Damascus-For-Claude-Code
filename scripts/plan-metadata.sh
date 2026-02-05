@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script to add/update metadata (date, time, session ID) in plan documents
+# Script to add/update metadata (date, time, session ID) in forge documents
 set -euo pipefail
 
 # JSON 출력 함수
@@ -21,11 +21,6 @@ session_id="${CLAUDE_SESSION_ID:-unknown}"
 # 파일 경로 검증
 if [ -z "$file_path" ]; then
     output_error "No file_path provided"
-    exit 0
-fi
-
-# Plan 파일인지 확인 (docs/plans/*.md 또는 *Plan.md)
-if [[ ! "$file_path" =~ docs/plans/.*\.md$ ]] && [[ ! "$file_path" =~ Plan\.md$ ]]; then
     exit 0
 fi
 
