@@ -170,6 +170,7 @@ damascus/
 
 ## Changelog
 
+- **3.2.0** — Fix cross-platform portability in plan-metadata.sh, add argument-hint and unified workflow sections to all commands
 - **3.0.0** — Document forging with plan/doc modes, settings path migration
 - **2.0.0** — Multi-LLM forging workflow
 - **1.1.0** — Gemini review integration

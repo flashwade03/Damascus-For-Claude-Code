@@ -35,25 +35,28 @@ current_datetime=$(date "+%Y-%m-%d %H:%M")
 
 # 기존 frontmatter 확인
 if head -1 "$file_path" | grep -q "^---$"; then
-    # 기존 frontmatter가 있음 - modified 업데이트
+    temp_file=$(mktemp)
+
+    # modified 업데이트 또는 추가
     if grep -q "^modified:" "$file_path"; then
-        # modified 필드 업데이트
-        sed -i '' "s/^modified:.*$/modified: $current_datetime/" "$file_path"
+        sed "s/^modified:.*$/modified: $current_datetime/" "$file_path" > "$temp_file"
     else
-        # modified 필드 추가 (첫 번째 --- 다음 줄에)
-        sed -i '' "2a\\
+        sed "2a\\
 modified: $current_datetime
-" "$file_path"
+" "$file_path" > "$temp_file"
     fi
+    mv "$temp_file" "$file_path"
 
     # session_id 업데이트 또는 추가
+    temp_file=$(mktemp)
     if grep -q "^session_id:" "$file_path"; then
-        sed -i '' "s/^session_id:.*$/session_id: $session_id/" "$file_path"
+        sed "s/^session_id:.*$/session_id: $session_id/" "$file_path" > "$temp_file"
     else
-        sed -i '' "2a\\
+        sed "2a\\
 session_id: $session_id
-" "$file_path"
+" "$file_path" > "$temp_file"
     fi
+    mv "$temp_file" "$file_path"
 else
     # frontmatter가 없음 - 새로 추가
     temp_file=$(mktemp)

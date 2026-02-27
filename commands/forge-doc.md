@@ -1,11 +1,20 @@
 ---
 name: forge-doc
 description: Damascus workflow that forges technical documents through multi-LLM review. API specs, architecture docs, design docs, etc.
+argument-hint: "[-n max] [-o path] <task description>"
 ---
 
 # Forge Document
 
 Forge a technical document with deep codebase exploration and multi-LLM review.
+The author explores the actual codebase first, then writes documentation grounded in real code — not generic advice.
+
+## Workflow
+
+1. **Author** (Opus) → Explore codebase and write technical document
+2. **Writer** → Save to file
+3. **Reviewers** → Multi-LLM parallel review (Claude / Gemini / OpenAI)
+4. **Judge** → Approve or request re-forging (up to `-n` iterations)
 
 ## Usage
 
@@ -13,6 +22,7 @@ Forge a technical document with deep codebase exploration and multi-LLM review.
 /forge-doc [-n max] [-o output_path] [task description]
 ```
 
+- `-n`: Maximum forging iterations (default: 3)
 - `-o`: Output file path (optional — if omitted, determined automatically or asked)
 
 Examples:

@@ -1,20 +1,23 @@
 ---
 name: forge
 description: Damascus workflow that forges documents through multi-LLM review. Auto-detects whether to create a plan or a document.
+argument-hint: "[-n max] [-o path] <task description>"
 ---
 
 # Forge
 
 Like Damascus steel, documents become stronger through repeated forging.
+Auto-detects whether to invoke the **planner** (implementation plans) or **author** (technical documents) based on task keywords.
+
+- Plan keywords: implement, build, change, refactor, develop, add, fix, migrate, upgrade
+- Document keywords: write, document, specify, design doc, API spec, architecture
 
 ## Workflow
 
-1. **Author/Planner** → Create initial draft
+1. **Author/Planner** → Create initial draft with deep codebase exploration
 2. **Writer** → Save to file
-3. **Reviewers** → Multi-LLM parallel review
-4. **Judge**:
-   - Needs Work → Return to Step 1 for re-forging
-   - Approved → Complete
+3. **Reviewers** → Multi-LLM parallel review (Claude / Gemini / OpenAI)
+4. **Judge** → Approve or request re-forging (up to `-n` iterations)
 
 ## Usage
 
@@ -24,7 +27,6 @@ Like Damascus steel, documents become stronger through repeated forging.
 
 - `-n`: Maximum forging iterations (default: 3)
 - `-o`: Output file path (optional — if omitted, determined automatically or asked)
-- Early completion if approved
 
 Examples:
 ```
