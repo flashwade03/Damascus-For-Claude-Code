@@ -21,6 +21,47 @@ Damascus is a **Claude Code plugin** that refines documents through an iterative
 /forge [-n max] [-o path] <task description>
 ```
 
+## Why
+
+When Claude's plan mode doesn't get it right, you start over. New context, new exploration, new attempt — everything from the previous try is gone. Do this three times and you've spent three full plan mode runs, but the result learned nothing from prior failures.
+
+This is rolling dice until you get a six.
+
+Damascus takes a different approach: **feedback accumulates, context is preserved, and each iteration builds on the last.** The first draft's weaknesses become the second draft's input. Reviewers catch what the author missed, and the author addresses it — within the same context, not from scratch.
+
+The result isn't random. It converges.
+
+### The cost of getting it wrong
+
+Development costs 3–5× more than planning. Without Damascus, you pay that cost every attempt.
+
+```
+Without Damascus — re-roll until it works
+
+  Attempt 1:  Plan [====]  →  Develop [================]  →  ✗ flawed
+  Attempt 2:  Plan [====]  →  Develop [================]  →  ✗ still flawed
+  Attempt 3:  Plan [====]  →  Develop [================]  →  ✓ acceptable
+
+  Total tokens:  ~300K (plan) + ~900K (develop) = ~1.2M
+  Prior context:  0% — each attempt starts from scratch
+```
+
+```
+With Damascus — iterate on the cheap side, develop once
+
+  Iteration 1:  Draft [====]  →  Review [==]  →  refine
+  Iteration 2:  Refine [==]   →  Review [==]  →  refine
+  Iteration 3:  Refine [==]   →  Review [==]  →  ✓ approved
+  Development:  Develop [================]   →  ✓ done
+
+  Total tokens:  ~340K (plan + reviews) + ~300K (develop) = ~640K
+  Prior context:  100% — every iteration builds on the last
+```
+
+> **~1.2M tokens spent on 3 failed-then-succeeded developments, or ~640K tokens on 3 refined plans and 1 clean development.** The iteration happens where it's cheap.
+
+Fewer tokens isn't just cheaper — it means higher information density in the context window. Re-rolling spends tokens re-exploring the same codebase from scratch. Damascus spends tokens on feedback that refines what's already known.
+
 ## How It Works
 
 ```
