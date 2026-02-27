@@ -57,7 +57,7 @@ Damascusは、複数のLLMによる反復レビューループでドキュメン
 ```bash
 # マーケットプレイスを追加してインストール
 /plugin marketplace add flashwade03/Damascus-For-Claude-Code
-/plugin install damascus@fablers
+/plugin install damascus@planner
 ```
 
 初回セッション開始時に、Damascusがプロジェクトディレクトリに`.claude/damascus.local.md`を自動生成します。外部レビュアーを有効にするにはAPIキーを入力してください。

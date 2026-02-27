@@ -57,7 +57,7 @@ Each iteration folds in feedback from all reviewers, strengthening the document 
 ```bash
 # Add marketplace and install
 /plugin marketplace add flashwade03/Damascus-For-Claude-Code
-/plugin install damascus@fablers
+/plugin install damascus@planner
 ```
 
 On the first session, Damascus automatically creates `.claude/damascus.local.md` in your project directory. Fill in your API keys there to enable external reviewers.

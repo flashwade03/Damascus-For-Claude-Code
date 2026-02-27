@@ -57,7 +57,7 @@ Damascus는 여러 LLM의 반복 리뷰 루프를 통해 문서를 정련하는 
 ```bash
 # 마켓플레이스 추가 및 설치
 /plugin marketplace add flashwade03/Damascus-For-Claude-Code
-/plugin install damascus@fablers
+/plugin install damascus@planner
 ```
 
 첫 세션 시작 시 Damascus가 프로젝트 디렉토리에 `.claude/damascus.local.md`를 자동 생성합니다. 외부 리뷰어를 활성화하려면 API 키를 입력하세요.
