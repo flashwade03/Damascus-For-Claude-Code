@@ -1,28 +1,35 @@
 #!/bin/bash
-# SessionStart hook - Logs diagnostic information when session starts
+# SessionStart hook - Installation verification + settings file provisioning
 set -euo pipefail
 
-# 입력 읽기 (stdin 소비)
+# stdin 소비
 cat > /dev/null
 
-# 디렉토리 설정
-PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(dirname "$0")")}"
-DEBUG_FILE="$PROJECT_DIR/.claude/hook-debug.log"
-SETTINGS_FILE="$PLUGIN_ROOT/settings.local.md"
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+SETTINGS_DEST="$PROJECT_DIR/.claude/damascus.local.md"
+TEMPLATE_SRC="$PLUGIN_ROOT/damascus.template.md"
 
-# 디버그 로깅
-mkdir -p "$PROJECT_DIR/.claude"
-echo "$(date): === SESSION START ===" >> "$DEBUG_FILE"
-echo "$(date): CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT:-not_set}" >> "$DEBUG_FILE"
-echo "$(date): CLAUDE_PROJECT_DIR=${CLAUDE_PROJECT_DIR:-not_set}" >> "$DEBUG_FILE"
+# --- 1. 설치 검증 ---
+MISSING=()
+for f in "commands/forge.md" "skills/ForgeOrchestrator/SKILL.md" "scripts/utils.ts"; do
+  [ ! -f "$PLUGIN_ROOT/$f" ] && MISSING+=("$f")
+done
 
-# 설정 파일 확인
-if [ -f "$SETTINGS_FILE" ]; then
-    echo "$(date): Settings file found: $SETTINGS_FILE" >> "$DEBUG_FILE"
-else
-    echo "$(date): No settings file. Create settings.local.md in plugin directory for configuration." >> "$DEBUG_FILE"
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "{\"continue\": true, \"systemMessage\": \"[Damascus] Warning: missing files: ${MISSING[*]}\"}"
+  exit 0
 fi
 
-# 성공 출력
-echo '{"continue": true, "systemMessage": "workflow-hooks plugin loaded"}'
+# --- 2. 설정 파일 확인 및 생성 ---
+if [ ! -f "$SETTINGS_DEST" ]; then
+  mkdir -p "$PROJECT_DIR/.claude"
+  if [ -f "$TEMPLATE_SRC" ]; then
+    cp "$TEMPLATE_SRC" "$SETTINGS_DEST"
+    echo "{\"continue\": true, \"systemMessage\": \"[Damascus] Settings created at .claude/damascus.local.md — fill in your API keys to enable multi-LLM review.\"}"
+  else
+    echo "{\"continue\": true, \"systemMessage\": \"[Damascus] Warning: template not found, settings file could not be created.\"}"
+  fi
+else
+  echo "{\"continue\": true, \"systemMessage\": \"[Damascus] Ready.\"}"
+fi

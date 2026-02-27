@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Local settings (contains API keys) - copy from settings.template.md
+# Local settings (contains API keys) - auto-created at .claude/damascus.local.md per project
 settings.local.md
+damascus.local.md
 
 # Debug logs
 .claude/

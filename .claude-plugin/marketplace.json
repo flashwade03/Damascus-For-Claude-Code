@@ -1,0 +1,24 @@
+{
+  "name": "fablers",
+  "owner": {
+    "name": "Heechang Jung"
+  },
+  "metadata": {
+    "description": "Damascus — forge documents through iterative multi-LLM review",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "damascus",
+      "source": "./",
+      "description": "Forge documents through iterative multi-LLM review — like Damascus steel, stronger through repeated folding.",
+      "version": "3.0.0",
+      "author": {
+        "name": "flashwade03"
+      },
+      "repository": "https://github.com/flashwade03/Damascus-For-Claude-Code",
+      "license": "MIT",
+      "keywords": ["forge", "review", "multi-llm", "planning", "documentation"]
+    }
+  ]
+}

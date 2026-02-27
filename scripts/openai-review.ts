@@ -1,13 +1,12 @@
 #!/usr/bin/env npx tsx
 import { readFileSync, existsSync } from 'node:fs'
 import { stdin, stdout } from 'node:process'
-import { join } from 'node:path'
 import {
   parseSettings,
   buildReviewPrompt,
   isResponsesAPIModel,
   extractResponsesAPIText,
-  getPluginRoot
+  getSettingsPath
 } from './utils.js'
 
 interface HookInput {
@@ -22,8 +21,7 @@ interface HookOutput {
 }
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
-const PLUGIN_ROOT = getPluginRoot(import.meta.url)
-const SETTINGS_FILE = join(PLUGIN_ROOT, 'settings.local.md')
+const SETTINGS_FILE = getSettingsPath()
 
 async function callOpenAIAPI(prompt: string, apiKey: string, model: string): Promise<string> {
   const isResponsesAPI = isResponsesAPIModel(model)
@@ -118,7 +116,7 @@ async function main(): Promise<void> {
     if (!apiKey) {
       output({
         success: false,
-        error: 'No OpenAI API key. Set openai_api_key in plugin settings.local.md or OPENAI_API_KEY env var.'
+        error: 'No OpenAI API key. Set openai_api_key in .claude/damascus.local.md or OPENAI_API_KEY env var.'
       })
       return
     }

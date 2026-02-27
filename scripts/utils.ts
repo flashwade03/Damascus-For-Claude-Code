@@ -25,12 +25,24 @@ export function getPluginRoot(importMetaUrl?: string): string {
   ]
 
   for (const root of possibleRoots) {
-    if (existsSync(join(root, 'settings.local.md')) || existsSync(join(root, 'plugin.json'))) {
+    if (existsSync(join(root, '.claude-plugin', 'plugin.json'))) {
       return root
     }
   }
 
   return process.cwd()
+}
+
+/**
+ * Get settings file path in the project directory
+ * Priority: CLAUDE_PROJECT_DIR env var > cwd
+ */
+export function getSettingsPath(): string {
+  const projectDir = process.env.CLAUDE_PROJECT_DIR
+  if (projectDir) {
+    return join(projectDir, '.claude', 'damascus.local.md')
+  }
+  return join(process.cwd(), '.claude', 'damascus.local.md')
 }
 
 export interface Settings {

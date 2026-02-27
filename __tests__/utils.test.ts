@@ -6,7 +6,8 @@ import {
   extractResponsesAPIText,
   projectPathToClaudeFolder,
   getShortId,
-  getPluginRoot
+  getPluginRoot,
+  getSettingsPath
 } from '../scripts/utils'
 
 describe('parseSettingsFromContent', () => {
@@ -179,6 +180,26 @@ describe('getShortId', () => {
 
   it('should handle exactly 8 characters', () => {
     expect(getShortId('12345678')).toBe('12345678')
+  })
+})
+
+describe('getSettingsPath', () => {
+  const originalEnv = process.env.CLAUDE_PROJECT_DIR
+
+  beforeEach(() => { delete process.env.CLAUDE_PROJECT_DIR })
+  afterEach(() => {
+    if (originalEnv !== undefined) process.env.CLAUDE_PROJECT_DIR = originalEnv
+    else delete process.env.CLAUDE_PROJECT_DIR
+  })
+
+  it('should use CLAUDE_PROJECT_DIR when set', () => {
+    process.env.CLAUDE_PROJECT_DIR = '/my/project'
+    expect(getSettingsPath()).toBe('/my/project/.claude/damascus.local.md')
+  })
+
+  it('should fallback to cwd when env not set', () => {
+    const result = getSettingsPath()
+    expect(result).toContain('.claude/damascus.local.md')
   })
 })
 

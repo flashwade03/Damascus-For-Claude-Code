@@ -1,8 +1,7 @@
 #!/usr/bin/env npx tsx
 import { readFileSync, existsSync } from 'node:fs'
 import { stdin, stdout } from 'node:process'
-import { join } from 'node:path'
-import { parseSettings, buildReviewPrompt, getPluginRoot } from './utils.js'
+import { parseSettings, buildReviewPrompt, getSettingsPath } from './utils.js'
 
 interface HookInput {
   file_path?: string
@@ -29,8 +28,7 @@ interface HookOutput {
 }
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
-const PLUGIN_ROOT = getPluginRoot(import.meta.url)
-const SETTINGS_FILE = join(PLUGIN_ROOT, 'settings.local.md')
+const SETTINGS_FILE = getSettingsPath()
 
 async function callGeminiAPI(prompt: string, apiKey: string, model: string): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
@@ -102,7 +100,7 @@ async function main(): Promise<void> {
     if (!apiKey) {
       output({
         success: false,
-        error: 'No Gemini API key. Set gemini_api_key in plugin settings.local.md or GEMINI_API_KEY env var.'
+        error: 'No Gemini API key. Set gemini_api_key in .claude/damascus.local.md or GEMINI_API_KEY env var.'
       })
       return
     }

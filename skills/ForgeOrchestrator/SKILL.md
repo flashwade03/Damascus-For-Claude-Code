@@ -196,7 +196,7 @@ This adds `created`, `modified`, and `session_id` fields to the document's front
 
 ## Step 5: Collect Reviews (Parallel)
 
-First, read `${CLAUDE_PLUGIN_ROOT}/settings.local.md` to check which inspectors are enabled:
+First, read `${CLAUDE_PROJECT_DIR}/.claude/damascus.local.md` to check which inspectors are enabled:
 
 ```yaml
 enable_claude_review: true

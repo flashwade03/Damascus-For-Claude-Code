@@ -1,0 +1,143 @@
+<p align="center">
+  <strong>Damascus</strong><br>
+  <em>マルチLLMレビューの反復によりドキュメントを鍛造する</em>
+</p>
+
+<p align="center">
+  <a href="#インストール">インストール</a> &middot;
+  <a href="#使い方">使い方</a> &middot;
+  <a href="#設定">設定</a> &middot;
+  <a href="./README.md">English</a> &middot;
+  <a href="./README.ko.md">한국어</a>
+</p>
+
+---
+
+> ダマスカス鋼のように、ドキュメントは繰り返しの鍛造で強くなる。
+
+Damascusは、複数のLLMによる反復レビューループでドキュメントを精錬する**Claude Codeプラグイン**です。実装計画や技術文書を作成し、Claude・Gemini・OpenAIが並列でレビューした後、承認されるまで改善を続けます。
+
+```
+/forge [-n max] [-o path] <タスクの説明>
+```
+
+## 仕組み
+
+```
+          ┌─────────────┐
+          │   Author    │  ドキュメント草案の作成
+          └──────┬──────┘
+                 │
+          ┌──────▼──────┐
+          │   Writer    │  ファイルに保存
+          └──────┬──────┘
+                 │
+     ┌───────────┼───────────┐
+     ▼           ▼           ▼
+  Claude      Gemini      OpenAI     並列レビュー
+     └───────────┼───────────┘
+                 ▼
+          ┌─────────────┐
+          │    Judge     │──── 承認 ──▶ 完了
+          └──────┬──────┘
+                 │ 要修正
+                 └──▶ Authorに戻る（最大N回）
+```
+
+各イテレーションで全レビュアーのフィードバックを取り込み、ダマスカス鋼の層のようにドキュメントを強化します。
+
+## 設計思想
+
+- **技法より意図** — プロンプトエンジニアリングで迂回せず、Claudeネイティブのplanモードを信頼します。
+- **まず探索、書くのは後** — エージェントがコードベースを深く調査してから成果物を生成します。
+- **速度より品質** — よく鍛えられた一つのドキュメントは、実装ミスの繰り返しに勝ります。
+
+## インストール
+
+```bash
+# マーケットプレイスを追加してインストール
+/plugin marketplace add flashwade03/Damascus-For-Claude-Code
+/plugin install damascus@fablers
+```
+
+初回セッション開始時に、Damascusがプロジェクトディレクトリに`.claude/damascus.local.md`を自動生成します。外部レビュアーを有効にするにはAPIキーを入力してください。
+
+## 使い方
+
+### コマンド
+
+| コマンド | モード | 説明 |
+|----------|--------|------|
+| `/forge` | 自動 | タスクに応じてplan / documentを自動判定 |
+| `/forge-plan` | Plan | 実装計画書（Claudeのplanモード使用） |
+| `/forge-doc` | Document | 技術文書 — API仕様、アーキテクチャ、設計ドキュメント |
+
+### 例
+
+```bash
+/forge implement user authentication
+/forge write API spec for the payment module
+
+/forge-plan -n 5 implement notification system
+/forge-doc -o docs/api/payment.md write API spec for payment
+```
+
+### オプション
+
+| フラグ | 説明 | デフォルト |
+|--------|------|------------|
+| `-n <max>` | 最大イテレーション回数 | `3` |
+| `-o <path>` | 出力ファイルパス | 自動検出 |
+
+`-o`を省略すると、プロジェクトのドキュメント規約を検出するか、ユーザーに確認します。
+
+## 設定
+
+`.claude/damascus.local.md`を編集（プロジェクトごとに自動生成）:
+
+```yaml
+---
+gemini_api_key: YOUR_GEMINI_KEY
+gemini_model: gemini-3-flash-preview
+enable_gemini_review: true
+
+openai_api_key: YOUR_OPENAI_KEY
+openai_model: gpt-5.1-codex-mini
+enable_openai_review: false
+
+enable_claude_review: true
+---
+```
+
+| オプション | 説明 | デフォルト |
+|------------|------|------------|
+| `gemini_api_key` | Gemini APIキー | — |
+| `gemini_model` | Geminiモデル | `gemini-3-flash-preview` |
+| `enable_gemini_review` | Geminiレビュアーを有効化 | `false` |
+| `openai_api_key` | OpenAI APIキー | — |
+| `openai_model` | OpenAIモデル | `gpt-5.1-codex-mini` |
+| `enable_openai_review` | OpenAIレビュアーを有効化 | `false` |
+| `enable_claude_review` | Claudeレビュアーを有効化 | `true` |
+
+## エージェント
+
+| エージェント | モデル | 役割 |
+|--------------|--------|------|
+| **Planner** | Opus（planモード） | コードベース探索、実装計画の作成 |
+| **Author** | Opus | コードベース探索、技術文書の作成 |
+| **Writer** | Haiku | 内容を変更せずファイルに保存 |
+| **Claude Reviewer** | Sonnet | 実際のコードベースとの照合検証 |
+
+### レビュー基準
+
+全レビュアーは以下の5つの観点で評価します:
+
+1. **コードベースとの整合** — 実際のファイル、関数、パターンを参照しているか
+2. **明確性** — 論理が一貫し、アプローチが妥当か
+3. **完全性** — 抜け漏れや未考慮のエッジケースがないか
+4. **実現可能性** — 技術的に健全で実装可能か
+5. **テスト可能性** — 検証方法が明確か
+
+## ライセンス
+
+MIT

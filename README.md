@@ -1,71 +1,99 @@
-# Damascus
+<p align="center">
+  <strong>Damascus</strong><br>
+  <em>Forge documents through iterative multi-LLM review</em>
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> &middot;
+  <a href="#usage">Usage</a> &middot;
+  <a href="#configuration">Configuration</a> &middot;
+  <a href="./README.ko.md">한국어</a> &middot;
+  <a href="./README.ja.md">日本語</a>
+</p>
+
+---
 
 > Like Damascus steel, documents become stronger through repeated forging.
 
-A Claude Code plugin that iteratively improves documents through multi-LLM review.
-
-## Core Concept
-
-Damascus steel becomes stronger through repeated folding and hammering.
-Similarly, this plugin refines documents through review by multiple AI models.
+Damascus is a **Claude Code plugin** that refines documents through an iterative review loop powered by multiple LLMs. Write an implementation plan or technical document, have it reviewed by Claude, Gemini, and OpenAI in parallel, then refine until approved.
 
 ```
-/forge [-n max] [-o path] [task description]
+/forge [-n max] [-o path] <task description>
 ```
+
+## How It Works
+
+```
+          ┌─────────────┐
+          │   Author    │  Draft the document
+          └──────┬──────┘
+                 │
+          ┌──────▼──────┐
+          │   Writer    │  Save to file
+          └──────┬──────┘
+                 │
+     ┌───────────┼───────────┐
+     ▼           ▼           ▼
+  Claude      Gemini      OpenAI     Review in parallel
+     └───────────┼───────────┘
+                 ▼
+          ┌─────────────┐
+          │    Judge     │──── Approved ──▶ Done
+          └──────┬──────┘
+                 │ Needs work
+                 └──▶ Back to Author (up to N iterations)
+```
+
+Each iteration folds in feedback from all reviewers, strengthening the document like layers of Damascus steel.
 
 ## Design Philosophy
 
-**Intent over technique.** Claude's built-in plan mode was carefully designed by Anthropic to work optimally with the model. Rather than trying to outsmart it with elaborate prompt engineering, Damascus trusts and leverages this native capability for implementation plans.
-
-**Explore first, write second.** Authoring agents deeply investigate the codebase before writing anything. The quality of a document is proportional to the depth of exploration.
-
-**Document quality over iteration speed.** This plugin deliberately avoids agentic loops (automated implement-test-fix cycles). Investing in one well-forged document upfront is far more effective than iterating through implementation mistakes.
-
-The plugin's value comes not from reinventing planning, but from the **iterative refinement loop** — using multiple LLM perspectives to strengthen what the authoring agents produce.
-
-## Workflow
-
-```
-    ┌──────────────┐
-    │ Planner or   │  Create draft
-    │ Author       │
-    └──────┬───────┘
-           │
-    ┌──────▼───────┐
-    │    Writer     │  Save to file
-    └──────┬───────┘
-           │
-    ┌──────▼───────┐
-    │   Metadata    │  Inject timestamps & session ID
-    └──────┬───────┘
-           │
-    ┌──────▼───────┐
-    │  Reviewers    │  Claude + Gemini + OpenAI (parallel)
-    └──────┬───────┘
-           │
-    ┌──────▼───────┐     ┌──────────┐
-    │    Judge      │────▶│ Approved │  Done
-    └──────┬───────┘     └──────────┘
-           │ Needs Work
-           └──▶ Back to Author (up to N times)
-```
+- **Intent over technique** — Trusts Claude's native plan mode rather than overriding it with prompt engineering.
+- **Explore first, write second** — Agents deeply investigate the codebase before producing output.
+- **Quality over speed** — One well-forged document beats a cycle of implementation mistakes.
 
 ## Installation
 
-1. Clone or copy this plugin to your plugins directory
-2. Set up configuration:
-   ```bash
-   cp settings.template.md settings.local.md
-   # Edit settings.local.md with your API keys
-   ```
-3. Run Claude Code with the plugin:
-   ```bash
-   claude --plugin-dir ./damascus
-   ```
+```bash
+# Add marketplace and install
+/plugin marketplace add flashwade03/Damascus-For-Claude-Code
+/plugin install damascus@fablers
+```
+
+On the first session, Damascus automatically creates `.claude/damascus.local.md` in your project directory. Fill in your API keys there to enable external reviewers.
+
+## Usage
+
+### Commands
+
+| Command | Mode | Description |
+|---------|------|-------------|
+| `/forge` | Auto | Decides plan vs. document based on your task |
+| `/forge-plan` | Plan | Implementation plans (uses Claude's plan mode) |
+| `/forge-doc` | Document | Technical docs — API specs, architecture, design docs |
+
+### Examples
+
+```bash
+/forge implement user authentication
+/forge write API spec for the payment module
+
+/forge-plan -n 5 implement notification system
+/forge-doc -o docs/api/payment.md write API spec for payment
+```
+
+### Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-n <max>` | Max forging iterations | `3` |
+| `-o <path>` | Output file path | Auto-detected |
+
+If `-o` is omitted, Damascus detects your project's doc conventions or asks you.
 
 ## Configuration
 
-Copy `settings.template.md` to `settings.local.md` and configure:
+Edit `.claude/damascus.local.md` (auto-created per project):
 
 ```yaml
 ---
@@ -74,109 +102,79 @@ gemini_model: gemini-3-flash-preview
 enable_gemini_review: true
 
 openai_api_key: YOUR_OPENAI_KEY
-openai_model: gpt-4o-mini
-enable_openai_review: true
+openai_model: gpt-5.1-codex-mini
+enable_openai_review: false
 
 enable_claude_review: true
 ---
 ```
 
-## Usage
+| Option | Description | Default |
+|--------|-------------|---------|
+| `gemini_api_key` | Gemini API key | — |
+| `gemini_model` | Gemini model | `gemini-3-flash-preview` |
+| `enable_gemini_review` | Enable Gemini reviewer | `false` |
+| `openai_api_key` | OpenAI API key | — |
+| `openai_model` | OpenAI model | `gpt-5.1-codex-mini` |
+| `enable_openai_review` | Enable OpenAI reviewer | `false` |
+| `enable_claude_review` | Enable Claude reviewer | `true` |
 
-### Commands
-
-| Command | Mode | Description |
-|---------|------|-------------|
-| `/forge` | Auto-detect | Orchestrator decides based on task description |
-| `/forge-plan` | Plan | Implementation plans using Anthropic's plan mode |
-| `/forge-doc` | Document | Technical documents — API specs, architecture, design docs, etc. |
-
-### Examples
-
-```bash
-# Auto-detect mode
-/forge implement user authentication
-/forge write API spec for the payment module
-
-# Explicit plan mode
-/forge-plan refactor the database layer
-/forge-plan -n 5 implement notification system
-
-# Explicit document mode
-/forge-doc architecture document for caching strategy
-/forge-doc -o docs/api/payment.md write API spec for payment
-
-# Options
--n [max]    # Max forging iterations (default: 3)
--o [path]   # Output file path (optional)
-```
-
-### Output Path
-
-If `-o` is not specified, the orchestrator determines the path:
-1. Detects existing project conventions (e.g., `docs/api/`, `docs/plans/`)
-2. If uncertain, asks the user where to save
-
-### Agents
+## Agents
 
 | Agent | Model | Role |
 |-------|-------|------|
 | **Planner** | Opus (plan mode) | Explores codebase, creates implementation plans |
 | **Author** | Opus | Explores codebase, writes technical documents |
-| **Writer** | Haiku | Saves content to file (no modifications) |
-| **Claude Reviewer** | Sonnet | Cross-references plan against actual codebase |
+| **Writer** | Haiku | Saves content to file without modification |
+| **Claude Reviewer** | Sonnet | Cross-references document against actual codebase |
 
 ### Review Criteria
 
-All reviewers evaluate documents against these dimensions:
+All reviewers evaluate against five dimensions:
 
-1. **Codebase Grounding** — Does it reference real files, functions, and patterns?
-2. **Clarity of Thinking** — Is the reasoning coherent and well-justified?
-3. **Completeness** — Are there obvious gaps?
-4. **Feasibility** — Is the approach technically sound?
-5. **Testability** — Does it address how we'll know it works?
+1. **Codebase Grounding** — References real files, functions, and patterns
+2. **Clarity** — Coherent reasoning, well-justified approach
+3. **Completeness** — No obvious gaps or missing edge cases
+4. **Feasibility** — Technically sound and implementable
+5. **Testability** — Clear path to verification
 
-## Configuration Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `gemini_api_key` | Gemini API key | - |
-| `gemini_model` | Gemini model | `gemini-3-flash-preview` |
-| `enable_gemini_review` | Enable Gemini | `true` |
-| `openai_api_key` | OpenAI API key | - |
-| `openai_model` | OpenAI model | `gpt-4o-mini` |
-| `enable_openai_review` | Enable OpenAI | `false` |
-| `enable_claude_review` | Enable Claude | `true` |
-
-## Structure
+## Project Structure
 
 ```
 damascus/
+├── .claude-plugin/
+│   └── plugin.json           # Plugin manifest
 ├── commands/
-│   ├── forge.md              # /forge command (auto-detect)
-│   ├── forge-plan.md         # /forge-plan command (plan mode)
-│   └── forge-doc.md          # /forge-doc command (documents)
-├── skills/
-│   └── ForgeOrchestrator/    # Workflow orchestrator
+│   ├── forge.md              # /forge (auto-detect mode)
+│   ├── forge-plan.md         # /forge-plan (plan mode)
+│   └── forge-doc.md          # /forge-doc (document mode)
 ├── agents/
-│   ├── planner.md            # Plan creation (plan mode)
-│   ├── author.md             # Document creation (general)
-│   ├── writer.md             # File saving
-│   └── claude-reviewer.md    # Claude review
+│   ├── planner.md            # Plan authoring agent
+│   ├── author.md             # Document authoring agent
+│   ├── writer.md             # File writer agent
+│   └── claude-reviewer.md    # Claude review agent
+├── skills/
+│   └── ForgeOrchestrator/    # Workflow orchestration skill
 ├── scripts/
 │   ├── gemini-review.ts      # Gemini API integration
 │   ├── openai-review.ts      # OpenAI API integration
-│   ├── get-session-id.ts     # Session ID retrieval
-│   └── plan-metadata.sh      # Metadata injection
-├── __tests__/
-│   └── utils.test.ts         # Utility tests
-├── settings.local.md
-└── README.md
+│   ├── get-session-id.ts     # Session ID utility
+│   ├── plan-metadata.sh      # Metadata injection
+│   └── session-start.sh      # Setup & settings provisioning
+├── hooks/
+│   └── hooks.json            # Hook definitions
+├── damascus.template.md      # Settings template
+└── __tests__/
+    └── utils.test.ts         # Unit tests
 ```
 
-## Version
+## Changelog
 
-- **3.0.0** - General document forging with plan/doc modes
-- **2.0.0** - Multi-LLM forging workflow
-- **1.1.0** - Gemini review
-- **1.0.0** - Initial version
+- **3.0.0** — Document forging with plan/doc modes, settings path migration
+- **2.0.0** — Multi-LLM forging workflow
+- **1.1.0** — Gemini review integration
+- **1.0.0** — Initial release
+
+## License
+
+MIT

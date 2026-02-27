@@ -8,24 +8,18 @@ enable_openai_review: false
 enable_claude_review: true
 ---
 
-# Workflow Hooks Configuration
+# Damascus Configuration
 
-This file stores the settings for the workflow-hooks plugin.
+Settings for multi-LLM review in the Damascus forge workflow.
 
-## Setup
-
-Copy this file to `settings.local.md` and fill in your API keys:
-
-```bash
-cp settings.template.md settings.local.md
-```
+This file is automatically created at `.claude/damascus.local.md` in your project directory when a session starts. Fill in your API keys to enable external reviewers.
 
 ## Configuration Options
 
 - `gemini_api_key`: Gemini API key (required if Gemini review enabled)
-- `gemini_model`: Gemini model to use (default: gemini-2.0-flash)
+- `gemini_model`: Gemini model to use (default: gemini-3-flash-preview)
 - `enable_gemini_review`: Enable/disable Gemini review (true/false)
 - `openai_api_key`: OpenAI API key (required if OpenAI review enabled)
-- `openai_model`: OpenAI model to use (default: gpt-4o-mini)
+- `openai_model`: OpenAI model to use (default: gpt-5.1-codex-mini)
 - `enable_openai_review`: Enable/disable OpenAI review (true/false)
-- `enable_claude_review`: Enable/disable Claude review (true/false), fixed model: Claude Sonnet 4.5
+- `enable_claude_review`: Enable/disable Claude review (true/false)
