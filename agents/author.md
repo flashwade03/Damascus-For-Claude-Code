@@ -2,7 +2,7 @@
 name: author
 description: Agent that deeply explores the codebase and writes technical documents — API specs, architecture docs, design docs, and more.
 model: opus
-color: green
+color: cyan
 tools: ["Read", "Glob", "Grep"]
 ---
 

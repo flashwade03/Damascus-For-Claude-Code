@@ -12,7 +12,7 @@
       "name": "damascus",
       "source": "./",
       "description": "Forge documents through iterative multi-LLM review — like Damascus steel, stronger through repeated folding.",
-      "version": "3.0.0",
+      "version": "3.1.0",
       "author": {
         "name": "flashwade03"
       },
