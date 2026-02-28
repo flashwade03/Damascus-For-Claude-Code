@@ -85,7 +85,7 @@ Fewer tokens isn't just cheaper — it means higher information density in the c
                  └──▶ Back to Author (up to N iterations)
 ```
 
-Each iteration folds in feedback from all reviewers, strengthening the document like layers of Damascus steel.
+Each iteration folds in feedback from all reviewers, strengthening the document like layers of Damascus steel. The authoring agent is **resumed** across iterations — it remembers every file it read, every pattern it discovered, and refines surgically instead of re-exploring from scratch.
 
 ## Design Philosophy
 
@@ -209,6 +209,7 @@ damascus/
 
 ## Changelog
 
+- **3.3.0** — Agent resume across iterations (preserves codebase context), remove writer agent, foreground parallel reviews, review history compression, `--mode` plan/doc for all reviewers, session ID fallback
 - **3.2.0** — Fix cross-platform portability in plan-metadata.sh, add argument-hint and unified workflow sections to all commands
 - **3.0.0** — Document forging with plan/doc modes, settings path migration
 - **2.0.0** — Multi-LLM forging workflow
