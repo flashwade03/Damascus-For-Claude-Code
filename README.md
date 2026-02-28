@@ -70,7 +70,7 @@ Fewer tokens isn't just cheaper — it means higher information density in the c
           └──────┬──────┘
                  │
           ┌──────▼──────┐
-          │   Writer    │  Save to file
+          │    Save     │  Write to file
           └──────┬──────┘
                  │
      ┌───────────┼───────────┐
@@ -166,7 +166,6 @@ enable_claude_review: true
 |-------|-------|------|
 | **Planner** | Opus (plan mode) | Explores codebase, creates implementation plans |
 | **Author** | Opus | Explores codebase, writes technical documents |
-| **Writer** | Haiku | Saves content to file without modification |
 | **Claude Reviewer** | Sonnet | Cross-references document against actual codebase |
 
 ### Review Criteria
@@ -192,7 +191,6 @@ damascus/
 ├── agents/
 │   ├── planner.md            # Plan authoring agent
 │   ├── author.md             # Document authoring agent
-│   ├── writer.md             # File writer agent
 │   └── claude-reviewer.md    # Claude review agent
 ├── skills/
 │   └── ForgeOrchestrator/    # Workflow orchestration skill

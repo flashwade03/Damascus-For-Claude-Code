@@ -44,18 +44,18 @@ Returns JSON with `shortId` (first 8 characters).
 ## Workflow Overview
 
 ```
-  Author ──▶ Writer ──▶ Metadata ──▶ Reviewers (parallel) ──▶ Judge
-    ▲                                                           │
-    └───────────── Needs work ──────────────────────────────────┘
+  Author ──▶ Save ──▶ Metadata ──▶ Reviewers (parallel) ──▶ Judge
+    ▲                                                         │
+    └───────────── Needs work ────────────────────────────────┘
 ```
 
-1. **Draft** — Invoke `damascus:planner` or `damascus:author` via Task tool
+1. **Draft** — Invoke `damascus:planner` or `damascus:author` via Agent tool (resume on iteration 2+)
 2. **Resolve path** — `-o` flag > project conventions > ask user (first iteration only)
-3. **Save** — Invoke `damascus:writer` via Task tool
+3. **Save** — Orchestrator saves directly using Write tool (no writer agent)
 4. **Metadata** — Run `plan-metadata.sh` to inject timestamps and session ID
 5. **Review** — Launch enabled inspectors in parallel (Claude, Gemini, OpenAI)
 6. **Consolidate** — Write all feedback to `.review.md` (always full overwrite)
-7. **Judge** — APPROVED (no critical issues) or NEEDS_REVISION
+7. **Judge** — APPROVED (no critical issues from ANY reviewer) or NEEDS_REVISION
 8. **Loop** — If NEEDS_REVISION and iteration < max_iterations, return to step 1
 
 For detailed step-by-step procedures and tool invocation examples, consult **`references/workflow.md`**.
@@ -64,9 +64,11 @@ For the review file template and output format, consult **`references/review-tem
 
 ## Key Rules
 
+- **Resume authoring agent** — Store the `agentId` from the initial draft call. On iteration 2+, use `Agent(resume: agentId)` to preserve the agent's full codebase exploration context. Do NOT spawn a fresh agent each iteration.
 - Resolve output path once on the first iteration, then reuse
-- Run inspectors in parallel (single message, multiple tool calls)
-- Always pass full review feedback when refining
+- At least one inspector must be enabled — if all are disabled, save the document and end with a warning
+- Run inspectors in parallel (**foreground calls in a single message** — never use `run_in_background` or `TaskOutput`)
+- When refining, pass the **Consolidated Summary + Review History table** (not raw reviewer outputs)
 - Loop ends early if document is APPROVED before max iterations
 - Judge objectively — do not soften critical feedback
-- Always overwrite `.review.md` completely (Write, not Edit)
+- Always overwrite `.review.md` completely (Write, not Edit) — compress previous iteration into history row first

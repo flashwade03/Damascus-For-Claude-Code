@@ -15,7 +15,7 @@ Auto-detects whether to invoke the **planner** (implementation plans) or **autho
 ## Workflow
 
 1. **Author/Planner** → Create initial draft with deep codebase exploration
-2. **Writer** → Save to file
+2. **Save** → Write document to file
 3. **Reviewers** → Multi-LLM parallel review (Claude / Gemini / OpenAI)
 4. **Judge** → Approve or request re-forging (up to `-n` iterations)
 

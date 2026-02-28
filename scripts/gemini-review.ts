@@ -47,7 +47,7 @@ async function callGeminiAPI(prompt: string, apiKey: string, model: string): Pro
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(30000)
+    signal: AbortSignal.timeout(60000)
   })
 
   if (!response.ok) {
@@ -106,8 +106,10 @@ async function main(): Promise<void> {
     }
 
     const model = settings.gemini_model || DEFAULT_MODEL
+    const modeArg = (process.argv[3] === '--mode' && process.argv[4]) ? process.argv[4] : 'plan'
+    const mode: 'plan' | 'doc' = modeArg === 'doc' ? 'doc' : 'plan'
     const fileContent = readFileSync(filePath, 'utf-8')
-    const prompt = buildReviewPrompt(fileContent)
+    const prompt = buildReviewPrompt(fileContent, mode)
     const reviewText = await callGeminiAPI(prompt, apiKey, model)
 
     output({

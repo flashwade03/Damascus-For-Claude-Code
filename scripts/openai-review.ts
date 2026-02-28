@@ -122,8 +122,10 @@ async function main(): Promise<void> {
     }
 
     const model = settings.openai_model || DEFAULT_MODEL
+    const modeArg = (process.argv[3] === '--mode' && process.argv[4]) ? process.argv[4] : 'plan'
+    const mode: 'plan' | 'doc' = modeArg === 'doc' ? 'doc' : 'plan'
     const fileContent = readFileSync(filePath, 'utf-8')
-    const prompt = buildReviewPrompt(fileContent)
+    const prompt = buildReviewPrompt(fileContent, mode)
     const reviewText = await callOpenAIAPI(prompt, apiKey, model)
 
     output({

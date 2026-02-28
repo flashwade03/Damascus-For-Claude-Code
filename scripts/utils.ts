@@ -119,17 +119,22 @@ export function parseSettings(settingsFilePath: string): Settings {
 }
 
 /**
- * Build review prompt for plan content
+ * Build review prompt for document content
  */
-export function buildReviewPrompt(content: string): string {
-  return `Review the following implementation plan. A good plan is grounded in the actual codebase — it references real files, functions, and patterns rather than giving generic advice.
+export function buildReviewPrompt(content: string, mode: 'plan' | 'doc' = 'plan'): string {
+  const docType = mode === 'plan' ? 'implementation plan' : 'technical document'
+  const grounding = mode === 'plan'
+    ? 'A good plan is grounded in the actual codebase — it references real files, functions, and patterns rather than giving generic advice.'
+    : 'A good document is grounded in the actual codebase — it references real files, functions, and patterns rather than giving generic descriptions.'
+
+  return `Review the following ${docType}. ${grounding}
 
 Evaluate:
-1. Codebase Grounding: Does the plan reference specific code? Or could it apply to any project?
+1. Codebase Grounding: Does the ${docType} reference specific code? Or could it apply to any project?
 2. Clarity of Thinking: Is the reasoning coherent? Is the approach well-justified?
 3. Completeness: Are there obvious gaps — missing error handling, untested paths, ignored edge cases?
 4. Feasibility: Is the approach technically sound?
-5. Testability: Does the plan address how we'll know it works?
+5. Testability: Does the ${docType} address how we'll know it works?
 
 Document content:
 ---

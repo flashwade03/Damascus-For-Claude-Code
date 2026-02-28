@@ -12,7 +12,7 @@ The planner deeply explores the codebase first, then creates a grounded plan —
 ## Workflow
 
 1. **Planner** (Opus, plan mode) → Explore codebase and create implementation plan
-2. **Writer** → Save to file
+2. **Save** → Write document to file
 3. **Reviewers** → Multi-LLM parallel review (Claude / Gemini / OpenAI)
 4. **Judge** → Approve or request re-forging (up to `-n` iterations)
 
