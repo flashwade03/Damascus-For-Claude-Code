@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code plugin (v3.3.0) that forges documents through iterative multi-LLM review. Published on the Claude Code marketplace as `damascus@planner`.
+A Claude Code plugin (v4.0.0) that forges documents through iterative multi-LLM review. Published on the Claude Code marketplace as `damascus@planner`.
 
 ## Project Structure
 
@@ -12,6 +12,7 @@ commands/                    # Slash commands (/forge, /forge-plan, /forge-doc, 
 agents/                      # Subagent prompts (planner, author, claude-reviewer)
 skills/ForgeOrchestrator/    # v3 orchestration skill (SKILL.md + references/)
 skills/ForgeTeamOrchestrator/  # v4 Agent Teams orchestration (SKILL.md + references/)
+skills/AgentTeamsDebugger/     # v4 debugging skill (diagnostic procedures + known failures)
 scripts/                     # TypeScript/bash utilities
   api-clients.ts             # Extracted API call functions (Gemini, OpenAI) with dry-run/mock support
   gemini-review.ts           # Gemini review script (uses api-clients)
@@ -71,12 +72,12 @@ After `dev:enable`, restart Claude Code session for changes to take effect.
 7. **Judge** — APPROVED or NEEDS_REVISION
 8. **Loop** — Resume author agent with consolidated feedback
 
-## Current Status (v3.3.0)
+## Current Status (v4.0.0)
 
-- Agent resume across iterations
-- Writer agent removed (orchestrator saves directly)
-- Review history compression
+- Agent Teams mode (`/forge-team`) with Explorer + single Planner architecture
+- Sequential mode (`/forge`, `/forge-plan`, `/forge-doc`) unchanged from v3
 - Three reviewer backends (Claude, Gemini, OpenAI)
+- AgentTeamsDebugger skill for diagnosing stuck sessions
 
 ## Project Settings (.claude/settings.json)
 
@@ -95,9 +96,10 @@ After `dev:enable`, restart Claude Code session for changes to take effect.
 ## v4 — Agent Teams (Implemented)
 
 - `/forge-team` command — Agent Teams workflow (v3 `/forge` commands unchanged)
-- Lead orchestrates, Planners (N, auto-sized) draft, Scribe writes, Reviewers (up to 3) judge
-- Round flow: Planners discuss → Scribe writes → Reviewers discuss → loop or end
+- Lead orchestrates, Explorers (N) investigate, single Planner synthesizes, Scribe writes, Reviewers (up to 3) judge
+- Round flow: Explorers explore → Planner synthesizes → Scribe writes → Reviewers review → loop or end
 - Teammates stay alive across rounds — no resume needed
 - Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `.claude/settings.json`
-- Planner coordinator: planner-1 merges drafts. Review coordinator: reviewer-claude consolidates verdicts.
-- Only the Scribe writes files — planners and reviewers communicate via SendMessage only
+- Single Planner manages Explorers, submits plan via ExitPlanMode. Lead approves immediately.
+- Only the Scribe writes files — all other teammates communicate via SendMessage only
+- **Critical**: Lead inbox is `team-lead.json` — all prompts must use `recipient: "team-lead"`
