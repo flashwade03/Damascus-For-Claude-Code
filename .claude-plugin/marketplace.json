@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Damascus — forge documents through iterative multi-LLM review",
-    "version": "3.3.0"
+    "version": "4.0.0"
   },
   "plugins": [
     {
       "name": "damascus",
       "source": "./",
       "description": "Forge documents through iterative multi-LLM review — like Damascus steel, stronger through repeated folding.",
-      "version": "3.3.0",
+      "version": "4.0.0",
       "author": {
         "name": "flashwade03"
       },
