@@ -1,0 +1,16 @@
+## Review: Auth Module Refactoring Plan
+
+**Critical Issues:**
+- No mention of token expiration strategy. JWT tokens without expiration are a security risk.
+- Missing error handling for invalid/expired tokens in `src/middleware/auth.ts`.
+
+**Suggestions:**
+- Consider using refresh token rotation for better security.
+- Add rate limiting to the refresh endpoint to prevent token abuse.
+- Include a rollback plan for the cookie-to-JWT migration.
+
+**Codebase Grounding:** Good — references specific files (`src/auth/login.ts`, `src/middleware/auth.ts`).
+**Clarity:** Clear step-by-step approach.
+**Completeness:** Missing token expiration and error handling details.
+**Feasibility:** Sound approach, standard JWT pattern.
+**Testability:** Test file referenced but no specific test cases outlined.

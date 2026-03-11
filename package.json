@@ -1,14 +1,23 @@
 {
   "name": "damascus",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "Workflow that forges documents through iterative multi-LLM review",
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:unit": "vitest run __tests__/utils.test.ts __tests__/api-clients.test.ts",
+    "test:v4": "vitest run __tests__/v4-plugins/",
+    "test:integration": "vitest run __tests__/integration/",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "smoke": "bash scripts/smoke-test.sh",
+    "dev:enable": "bash scripts/dev-mode.sh --enable",
+    "dev:disable": "bash scripts/dev-mode.sh --disable",
+    "dev:status": "bash scripts/dev-mode.sh --status"
   },
   "devDependencies": {
-    "vitest": "^3.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": "^22.19.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
   }
 }

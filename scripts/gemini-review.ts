@@ -2,23 +2,11 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { stdin, stdout } from 'node:process'
 import { parseSettings, buildReviewPrompt, getSettingsPath } from './utils.js'
+import { callGeminiAPI } from './api-clients.js'
 
 interface HookInput {
   file_path?: string
   content?: string
-}
-
-interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string
-      }>
-    }
-  }>
-  error?: {
-    message?: string
-  }
 }
 
 interface HookOutput {
@@ -29,39 +17,6 @@ interface HookOutput {
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
 const SETTINGS_FILE = getSettingsPath()
-
-async function callGeminiAPI(prompt: string, apiKey: string, model: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-
-  const payload = {
-    contents: [{
-      parts: [{ text: prompt }]
-    }],
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 8192
-    }
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(60000)
-  })
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`)
-  }
-
-  const data = await response.json() as GeminiResponse
-
-  if (data.error) {
-    throw new Error(data.error.message ?? 'Unknown Gemini API error')
-  }
-
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'Unable to retrieve review result.'
-}
 
 function output(result: HookOutput): void {
   stdout.write(JSON.stringify(result))

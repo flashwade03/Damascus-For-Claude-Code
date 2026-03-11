@@ -19,6 +19,7 @@ Damascus는 여러 LLM의 반복 리뷰 루프를 통해 문서를 정련하는 
 
 ```
 /forge [-n max] [-o path] <작업 설명>
+/forge-team [-n max] [-o path] <작업 설명>
 ```
 
 ## 왜 만들었는가
@@ -64,6 +65,8 @@ Damascus — 싼 쪽에서 반복하고, 개발은 한 번만
 
 ## 동작 방식
 
+### `/forge` — 순차 실행 (v3)
+
 ```
           ┌─────────────┐
           │   Author    │  문서 초안 작성
@@ -86,6 +89,43 @@ Damascus — 싼 쪽에서 반복하고, 개발은 한 번만
 ```
 
 매 반복마다 모든 리뷰어의 피드백을 반영하여, 다마스커스 강철의 층처럼 문서를 강화합니다. 작성 에이전트는 반복 간에 **resume**되어 — 읽은 파일, 발견한 패턴을 모두 기억하고, 처음부터 다시 탐색하는 대신 정밀하게 수정합니다.
+
+### `/forge-team` — Agent Teams (v4)
+
+```
+  Lead ──▶ Planner ──▶ Explorers (병렬 코드베이스 탐색)
+                 ◄──── findings
+           Planner ──▶ Lead (ExitPlanMode로 계획 제출)
+  Lead ──▶ Scribe (정리 및 파일 작성)
+  Lead ──▶ Reviewers (병렬: Claude + Gemini + OpenAI)
+                 ◄──── reviews
+  Lead: 판정 ── 승인 ──▶ 종료
+                 │ 수정 필요
+                 └──▶ Planner (수정, 최대 N라운드)
+```
+
+Agent Teams 모드는 Claude Code의 [Agent Teams](https://docs.anthropic.com/en/docs/claude-code/agent-teams)를 사용하여 전문화된 팀원을 병렬로 실행합니다. 모든 팀원은 라운드 간에 살아 있어 — resume 없이 전체 컨텍스트가 보존됩니다.
+
+| 역할 | 수 | 담당 |
+|------|---|------|
+| **Lead** | 1 | 라운드 조율, 판정 결정 |
+| **Explorer** | 1–3 | 코드베이스 특정 영역 탐색, Planner에게 보고 |
+| **Planner** | 1 | Explorer 관리, 결과 종합, 계획 작성 |
+| **Scribe** | 1 | 유일하게 파일을 작성하는 에이전트 (문서 + 리뷰) |
+| **Reviewer** | 1–3 | 독립 리뷰 (Claude, Gemini, OpenAI) |
+
+### v3 vs v4
+
+두 모드 모두 멀티 LLM 리뷰를 거친 문서를 생성합니다. 차이는 깊이입니다:
+
+| | `/forge` (v3) | `/forge-team` (v4) |
+|--|---------------|---------------------|
+| **계획** | 단일 에이전트가 탐색 + 계획 | 다수 Explorer가 전담 Planner에게 정보 제공 |
+| **리뷰** | 병렬이지만 독립적 | 병렬, 팀원이 살아 있음 |
+| **컨텍스트** | 라운드 간 agent resume | 팀원이 멈추지 않음 — 전체 컨텍스트 |
+| **적합한 용도** | 빠른 반복, 단순 작업 | 깊은 탐색, 복잡한 코드베이스 |
+
+동일 태스크의 품질 비교는 [docs/v4-comparison/](docs/v4-comparison/)을 참조하세요.
 
 ## 설계 철학
 
@@ -112,6 +152,7 @@ Damascus — 싼 쪽에서 반복하고, 개발은 한 번만
 | `/forge` | 자동 | 작업에 따라 plan / document 자동 결정 |
 | `/forge-plan` | Plan | 구현 계획서 (Claude plan 모드 사용) |
 | `/forge-doc` | Document | 기술 문서 — API 스펙, 아키텍처, 설계 문서 |
+| `/forge-team` | 자동 (Teams) | Agent Teams 모드 — 병렬 Explorer, 전담 Planner |
 
 ### 예시
 
@@ -162,11 +203,25 @@ enable_claude_review: true
 
 ## 에이전트
 
+### 순차 모드 (`/forge`)
+
 | 에이전트 | 모델 | 역할 |
 |----------|------|------|
 | **Planner** | Opus (plan 모드) | 코드베이스 탐색, 구현 계획 작성 |
 | **Author** | Opus | 코드베이스 탐색, 기술 문서 작성 |
 | **Claude Reviewer** | Sonnet | 실제 코드베이스와 교차 검증 |
+
+### Agent Teams 모드 (`/forge-team`)
+
+| 에이전트 | 모델 | 역할 |
+|----------|------|------|
+| **Lead** | Opus | 라운드 조율, 리뷰 수집, 판정 결정 |
+| **Explorer** | Sonnet | 코드베이스 특정 영역 탐색, Planner에게 보고 |
+| **Planner** | Sonnet/Opus (plan 모드) | Explorer 관리, 계획 종합, ExitPlanMode 호출 |
+| **Scribe** | Sonnet | 계획 정리, 문서 및 리뷰 파일 작성 |
+| **Claude Reviewer** | Sonnet | 실제 코드베이스와 교차 검증 |
+| **Gemini Reviewer** | Haiku | Gemini 리뷰 스크립트 실행, 결과 전달 |
+| **OpenAI Reviewer** | Haiku | OpenAI 리뷰 스크립트 실행, 결과 전달 |
 
 ### 리뷰 기준
 
@@ -180,6 +235,7 @@ enable_claude_review: true
 
 ## 변경 이력
 
+- **4.0.0** — Agent Teams 모드 (`/forge-team`): 병렬 Explorer + 전담 Planner + Scribe + 독립 Reviewer를 라이브 팀원으로 운용. resume 없이 라운드 간 전체 컨텍스트 보존. [v3 vs v4 비교](docs/v4-comparison/)
 - **3.3.0** — 반복 간 에이전트 resume (코드베이스 컨텍스트 보존), writer agent 제거, foreground parallel 리뷰, 리뷰 히스토리 압축, 모든 리뷰어에 `--mode` plan/doc 전달, session ID fallback
 - **3.2.0** — plan-metadata.sh 크로스 플랫폼 호환성 수정, 명령어 argument-hint 및 워크플로우 섹션 통일
 - **3.0.0** — plan/doc 모드 문서 단조, 설정 경로 마이그레이션

@@ -19,6 +19,7 @@ Damascus is a **Claude Code plugin** that refines documents through an iterative
 
 ```
 /forge [-n max] [-o path] <task description>
+/forge-team [-n max] [-o path] <task description>
 ```
 
 ## Why
@@ -64,6 +65,8 @@ Fewer tokens isn't just cheaper — it means higher information density in the c
 
 ## How It Works
 
+### `/forge` — Sequential (v3)
+
 ```
           ┌─────────────┐
           │   Author    │  Draft the document
@@ -86,6 +89,43 @@ Fewer tokens isn't just cheaper — it means higher information density in the c
 ```
 
 Each iteration folds in feedback from all reviewers, strengthening the document like layers of Damascus steel. The authoring agent is **resumed** across iterations — it remembers every file it read, every pattern it discovered, and refines surgically instead of re-exploring from scratch.
+
+### `/forge-team` — Agent Teams (v4)
+
+```
+  Lead ──▶ Planner ──▶ Explorers (parallel codebase investigation)
+                 ◄──── findings
+           Planner ──▶ Lead (plan via ExitPlanMode)
+  Lead ──▶ Scribe (polish & write)
+  Lead ──▶ Reviewers (parallel: Claude + Gemini + OpenAI)
+                 ◄──── reviews
+  Lead: verdict ── APPROVED ──▶ Shutdown
+                 │ NEEDS_REVISION
+                 └──▶ Planner (revise, up to N rounds)
+```
+
+Agent Teams mode uses Claude Code's [Agent Teams](https://docs.anthropic.com/en/docs/claude-code/agent-teams) to run multiple specialized teammates in parallel. Every teammate stays alive across rounds — full context is preserved without resume.
+
+| Role | Count | Responsibility |
+|------|-------|----------------|
+| **Lead** | 1 | Orchestrates rounds, determines verdict |
+| **Explorer** | 1–3 | Investigates specific codebase areas, reports to Planner |
+| **Planner** | 1 | Manages explorers, synthesizes findings into a plan |
+| **Scribe** | 1 | Only agent that writes files (document + review) |
+| **Reviewer** | 1–3 | Independent review (Claude, Gemini, OpenAI) |
+
+### v3 vs v4
+
+Both modes produce reviewed, multi-LLM-approved documents. The difference is depth:
+
+| | `/forge` (v3) | `/forge-team` (v4) |
+|--|---------------|---------------------|
+| **Planning** | Single agent explores & plans | Multiple explorers feed a dedicated planner |
+| **Review** | Parallel but independent | Parallel, teammates stay alive |
+| **Context** | Agent resume between rounds | Teammates never stop — full context |
+| **Best for** | Fast iteration, simple tasks | Deep exploration, complex codebases |
+
+See [docs/v4-comparison/](docs/v4-comparison/) for a side-by-side quality comparison on the same task.
 
 ## Design Philosophy
 
@@ -112,6 +152,7 @@ On the first session, Damascus automatically creates `.claude/damascus.local.md`
 | `/forge` | Auto | Decides plan vs. document based on your task |
 | `/forge-plan` | Plan | Implementation plans (uses Claude's plan mode) |
 | `/forge-doc` | Document | Technical docs — API specs, architecture, design docs |
+| `/forge-team` | Auto (Teams) | Agent Teams mode — parallel explorers, dedicated planner |
 
 ### Examples
 
@@ -162,11 +203,25 @@ enable_claude_review: true
 
 ## Agents
 
+### Sequential mode (`/forge`)
+
 | Agent | Model | Role |
 |-------|-------|------|
 | **Planner** | Opus (plan mode) | Explores codebase, creates implementation plans |
 | **Author** | Opus | Explores codebase, writes technical documents |
 | **Claude Reviewer** | Sonnet | Cross-references document against actual codebase |
+
+### Agent Teams mode (`/forge-team`)
+
+| Agent | Model | Role |
+|-------|-------|------|
+| **Lead** | Opus | Orchestrates rounds, collects reviews, determines verdict |
+| **Explorer** | Sonnet | Investigates assigned codebase areas, reports to Planner |
+| **Planner** | Sonnet/Opus (plan mode) | Manages explorers, synthesizes plan, calls ExitPlanMode |
+| **Scribe** | Sonnet | Polishes plans, writes documents and review files |
+| **Claude Reviewer** | Sonnet | Cross-references document against actual codebase |
+| **Gemini Reviewer** | Haiku | Runs Gemini review script, relays results |
+| **OpenAI Reviewer** | Haiku | Runs OpenAI review script, relays results |
 
 ### Review Criteria
 
@@ -193,7 +248,8 @@ damascus/
 │   ├── author.md             # Document authoring agent
 │   └── claude-reviewer.md    # Claude review agent
 ├── skills/
-│   └── ForgeOrchestrator/    # Workflow orchestration skill
+│   ├── ForgeOrchestrator/    # Sequential workflow orchestration
+│   └── ForgeTeamOrchestrator/ # Agent Teams workflow orchestration
 ├── scripts/
 │   ├── gemini-review.ts      # Gemini API integration
 │   ├── openai-review.ts      # OpenAI API integration
@@ -209,6 +265,7 @@ damascus/
 
 ## Changelog
 
+- **4.0.0** — Agent Teams mode (`/forge-team`): parallel explorers + dedicated planner + scribe + independent reviewers as live teammates. Full context preserved across rounds without resume. [v3 vs v4 comparison](docs/v4-comparison/)
 - **3.3.0** — Agent resume across iterations (preserves codebase context), remove writer agent, foreground parallel reviews, review history compression, `--mode` plan/doc for all reviewers, session ID fallback
 - **3.2.0** — Fix cross-platform portability in plan-metadata.sh, add argument-hint and unified workflow sections to all commands
 - **3.0.0** — Document forging with plan/doc modes, settings path migration

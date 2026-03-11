@@ -19,6 +19,7 @@ Damascusは、複数のLLMによる反復レビューループでドキュメン
 
 ```
 /forge [-n max] [-o path] <タスクの説明>
+/forge-team [-n max] [-o path] <タスクの説明>
 ```
 
 ## なぜ作ったのか
@@ -64,6 +65,8 @@ Damascus — コストの安い側で反復し、開発は1回だけ
 
 ## 仕組み
 
+### `/forge` — 逐次実行（v3）
+
 ```
           ┌─────────────┐
           │   Author    │  ドキュメント草案の作成
@@ -86,6 +89,43 @@ Damascus — コストの安い側で反復し、開発は1回だけ
 ```
 
 各イテレーションで全レビュアーのフィードバックを取り込み、ダマスカス鋼の層のようにドキュメントを強化します。著者エージェントはイテレーション間で**resume**されます——読んだファイル、発見したパターンをすべて記憶し、ゼロから再探索する代わりに精密に修正します。
+
+### `/forge-team` — Agent Teams（v4）
+
+```
+  Lead ──▶ Planner ──▶ Explorers（並列コードベース調査）
+                 ◄──── findings
+           Planner ──▶ Lead（ExitPlanModeで計画を提出）
+  Lead ──▶ Scribe（整形・ファイル書き込み）
+  Lead ──▶ Reviewers（並列：Claude + Gemini + OpenAI）
+                 ◄──── reviews
+  Lead: 判定 ── 承認 ──▶ 終了
+                 │ 要修正
+                 └──▶ Planner（修正、最大Nラウンド）
+```
+
+Agent Teamsモードは、Claude Codeの[Agent Teams](https://docs.anthropic.com/en/docs/claude-code/agent-teams)を使用して、専門チームメイトを並列実行します。全チームメイトがラウンド間で生き続け、resumeなしで完全なコンテキストが保持されます。
+
+| 役割 | 数 | 担当 |
+|------|---|------|
+| **Lead** | 1 | ラウンド調整、判定決定 |
+| **Explorer** | 1–3 | コードベースの特定領域を調査、Plannerに報告 |
+| **Planner** | 1 | Explorerを管理、結果を統合、計画を作成 |
+| **Scribe** | 1 | ファイルを書き込む唯一のエージェント（ドキュメント＋レビュー） |
+| **Reviewer** | 1–3 | 独立レビュー（Claude、Gemini、OpenAI） |
+
+### v3 vs v4
+
+両モードともマルチLLMレビュー済みドキュメントを生成します。違いは深度です：
+
+| | `/forge`（v3） | `/forge-team`（v4） |
+|--|----------------|----------------------|
+| **計画** | 単一エージェントが探索＋計画 | 複数Explorerが専任Plannerに情報提供 |
+| **レビュー** | 並列だが独立 | 並列、チームメイトが生存 |
+| **コンテキスト** | ラウンド間でagent resume | チームメイトが停止しない — 完全なコンテキスト |
+| **適した用途** | 高速イテレーション、単純なタスク | 深い探索、複雑なコードベース |
+
+同一タスクでの品質比較は[docs/v4-comparison/](docs/v4-comparison/)を参照してください。
 
 ## 設計思想
 
@@ -112,6 +152,7 @@ Damascus — コストの安い側で反復し、開発は1回だけ
 | `/forge` | 自動 | タスクに応じてplan / documentを自動判定 |
 | `/forge-plan` | Plan | 実装計画書（Claudeのplanモード使用） |
 | `/forge-doc` | Document | 技術文書 — API仕様、アーキテクチャ、設計ドキュメント |
+| `/forge-team` | 自動（Teams） | Agent Teamsモード — 並列Explorer、専任Planner |
 
 ### 例
 
@@ -162,11 +203,25 @@ enable_claude_review: true
 
 ## エージェント
 
+### 逐次モード（`/forge`）
+
 | エージェント | モデル | 役割 |
 |--------------|--------|------|
 | **Planner** | Opus（planモード） | コードベース探索、実装計画の作成 |
 | **Author** | Opus | コードベース探索、技術文書の作成 |
 | **Claude Reviewer** | Sonnet | 実際のコードベースとの照合検証 |
+
+### Agent Teamsモード（`/forge-team`）
+
+| エージェント | モデル | 役割 |
+|--------------|--------|------|
+| **Lead** | Opus | ラウンド調整、レビュー収集、判定決定 |
+| **Explorer** | Sonnet | コードベースの特定領域を調査、Plannerに報告 |
+| **Planner** | Sonnet/Opus（planモード） | Explorerを管理、計画を統合、ExitPlanModeを呼び出し |
+| **Scribe** | Sonnet | 計画を整形、ドキュメントとレビューファイルを書き込み |
+| **Claude Reviewer** | Sonnet | 実際のコードベースとの照合検証 |
+| **Gemini Reviewer** | Haiku | Geminiレビュースクリプトを実行、結果を転送 |
+| **OpenAI Reviewer** | Haiku | OpenAIレビュースクリプトを実行、結果を転送 |
 
 ### レビュー基準
 
@@ -180,6 +235,7 @@ enable_claude_review: true
 
 ## 変更履歴
 
+- **4.0.0** — Agent Teamsモード（`/forge-team`）：並列Explorer＋専任Planner＋Scribe＋独立Reviewerをライブチームメイトとして運用。resumeなしでラウンド間の完全なコンテキスト保持。[v3 vs v4比較](docs/v4-comparison/)
 - **3.3.0** — イテレーション間のエージェントresume（コードベースコンテキスト保持）、writerエージェント削除、フォアグラウンド並列レビュー、レビュー履歴圧縮、全レビュアーに`--mode` plan/doc対応、セッションIDフォールバック
 - **3.2.0** — plan-metadata.shのクロスプラットフォーム互換性修正、コマンドにargument-hintとワークフローセクションを統一
 - **3.0.0** — plan/docモードでのドキュメント鍛造、設定パスの移行

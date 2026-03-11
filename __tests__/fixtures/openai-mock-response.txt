@@ -1,0 +1,15 @@
+## Review: Auth Module Refactoring Plan
+
+**Critical Issues:**
+- No CORS configuration update mentioned — JWT in Authorization header requires proper CORS headers.
+
+**Suggestions:**
+- Document the token payload structure (claims, expiration).
+- Consider adding a token blacklist for logout functionality.
+- Add integration tests for the full auth flow (login -> access -> refresh -> logout).
+
+**Codebase Grounding:** References real files but could be more specific about current implementation.
+**Clarity:** Well-structured and easy to follow.
+**Completeness:** CORS and logout flow missing.
+**Feasibility:** Straightforward migration.
+**Testability:** Needs more specific test scenarios.

@@ -8,7 +8,7 @@ import {
   getShortId,
   getPluginRoot,
   getSettingsPath
-} from '../scripts/utils'
+} from '../scripts/utils.js'
 
 describe('parseSettingsFromContent', () => {
   it('should parse valid frontmatter with all settings', () => {
