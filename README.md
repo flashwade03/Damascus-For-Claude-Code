@@ -242,14 +242,16 @@ damascus/
 ├── commands/
 │   ├── forge.md              # /forge (auto-detect mode)
 │   ├── forge-plan.md         # /forge-plan (plan mode)
-│   └── forge-doc.md          # /forge-doc (document mode)
+│   ├── forge-doc.md          # /forge-doc (document mode)
+│   └── forge-team.md         # /forge-team (Agent Teams mode)
 ├── agents/
 │   ├── planner.md            # Plan authoring agent
 │   ├── author.md             # Document authoring agent
 │   └── claude-reviewer.md    # Claude review agent
 ├── skills/
 │   ├── ForgeOrchestrator/    # Sequential workflow orchestration
-│   └── ForgeTeamOrchestrator/ # Agent Teams workflow orchestration
+│   ├── ForgeTeamOrchestrator/ # Agent Teams workflow orchestration
+│   └── AgentTeamsDebugger/   # Diagnostics for stuck forge-team sessions
 ├── scripts/
 │   ├── gemini-review.ts      # Gemini API integration
 │   ├── openai-review.ts      # OpenAI API integration
@@ -265,6 +267,8 @@ damascus/
 
 ## Changelog
 
+- **4.0.2** — ForgeTeamOrchestrator skill description optimized for clarity and negative-case filtering
+- **4.0.1** — Fix explorer cross-pollination (planner-mediated) and conditional reviewer spawning (only enabled reviewers are spawned)
 - **4.0.0** — Agent Teams mode (`/forge-team`): parallel explorers + dedicated planner + scribe + independent reviewers as live teammates. Full context preserved across rounds without resume. [v3 vs v4 comparison](docs/v4-comparison/)
 - **3.3.0** — Agent resume across iterations (preserves codebase context), remove writer agent, foreground parallel reviews, review history compression, `--mode` plan/doc for all reviewers, session ID fallback
 - **3.2.0** — Fix cross-platform portability in plan-metadata.sh, add argument-hint and unified workflow sections to all commands

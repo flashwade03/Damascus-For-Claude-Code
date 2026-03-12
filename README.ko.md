@@ -235,6 +235,8 @@ enable_claude_review: true
 
 ## 변경 이력
 
+- **4.0.2** — ForgeTeamOrchestrator 스킬 description 최적화 (역할 설명, 트리거 키워드, 오발동 방지 조건 추가)
+- **4.0.1** — Explorer 크로스 폴리네이션 수정 (Planner 매개), 조건부 리뷰어 스폰 (활성화된 리뷰어만 생성)
 - **4.0.0** — Agent Teams 모드 (`/forge-team`): 병렬 Explorer + 전담 Planner + Scribe + 독립 Reviewer를 라이브 팀원으로 운용. resume 없이 라운드 간 전체 컨텍스트 보존. [v3 vs v4 비교](docs/v4-comparison/)
 - **3.3.0** — 반복 간 에이전트 resume (코드베이스 컨텍스트 보존), writer agent 제거, foreground parallel 리뷰, 리뷰 히스토리 압축, 모든 리뷰어에 `--mode` plan/doc 전달, session ID fallback
 - **3.2.0** — plan-metadata.sh 크로스 플랫폼 호환성 수정, 명령어 argument-hint 및 워크플로우 섹션 통일
