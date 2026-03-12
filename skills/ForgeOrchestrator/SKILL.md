@@ -1,9 +1,9 @@
 ---
-name: Forge Orchestrator
-description: This skill should be used when the user executes "/forge", "/forge-plan", or "/forge-doc" commands, or asks to "forge a plan", "forge a document", "run the forge workflow", or "review with multiple LLMs". Orchestrates iterative multi-LLM document forging.
+name: forge-orchestrator
+description: "This skill should be used when the user executes /forge, /forge-plan, or /forge-doc commands, or asks to forge a plan, forge a document, run the forge workflow, or review with multiple LLMs. Orchestrates iterative multi-LLM document forging."
 ---
 
-# Forge Orchestrator
+# forge-orchestrator
 
 Iteratively improve documents through a repeated refinement loop — draft, review in parallel by multiple LLMs, refine until approved.
 
