@@ -1,6 +1,6 @@
 ---
 name: forge-orchestrator
-description: "This skill should be used when the user executes /forge, /forge-plan, or /forge-doc commands, or asks to forge a plan, forge a document, run the forge workflow, or review with multiple LLMs. Orchestrates iterative multi-LLM document forging."
+description: "Internal orchestration logic for /forge, /forge-plan, and /forge-doc commands. Do not trigger on general document writing or review questions — only when these commands are explicitly invoked."
 ---
 
 # forge-orchestrator

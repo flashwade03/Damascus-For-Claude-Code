@@ -267,6 +267,7 @@ damascus/
 
 ## Changelog
 
+- **4.0.4** — Narrow skill descriptions to command-specific triggers, fix forge-team command to match Explorer + Single Planner architecture
 - **4.0.3** — Fix skill YAML frontmatter: kebab-case names, quote descriptions to prevent parse errors
 - **4.0.2** — ForgeTeamOrchestrator skill description optimized for clarity and negative-case filtering
 - **4.0.1** — Fix explorer cross-pollination (planner-mediated) and conditional reviewer spawning (only enabled reviewers are spawned)

@@ -1,6 +1,6 @@
 ---
 name: agent-teams-debugger
-description: "Use this skill to diagnose and fix problems with Damascus /forge-team Agent Teams sessions. Trigger whenever the user mentions forge-team, agent teams, or damascus-forge AND describes something wrong, stuck, broken, not working, hanging, failing, erroring, or needing investigation. Also trigger for inbox inspection requests (team-lead.json, planner.json, lead.json), message routing issues, ExitPlanMode problems, health checks on team state, or recovery/restart questions. Covers Korean and English — 멈춰, 안 돼, 이상해, 망가졌다, 확인해줘, 디버깅 all qualify. Do NOT trigger for general forge/forge-plan usage, plugin installation, prompt improvement, architecture redesign, or Agent SDK questions — only for diagnosing why an active or recent forge-team session went wrong."
+description: "Diagnose and fix problems with Damascus /forge-team sessions. Only trigger when the user explicitly mentions forge-team or damascus-forge AND describes something stuck, broken, or needing debugging. Do not trigger on general agent teams questions or non-Damascus issues."
 ---
 
 # agent-teams-debugger

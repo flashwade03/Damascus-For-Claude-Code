@@ -1,6 +1,6 @@
 ---
 name: forge-team-orchestrator
-description: "Orchestrates Agent Teams for iterative multi-LLM document forging — parallel explorers investigate different codebase areas, a single planner synthesizes findings, a scribe writes, and reviewers (Claude/Gemini/OpenAI) judge. Use this skill whenever the user runs /forge-team, or asks to forge/create a plan or document using team mode, agent teams, parallel exploration, multiple explorers, or team-based forging workflow. Also triggers on Korean equivalents: 팀 모드로 포지, 에이전트 팀, 탐색자들이 조사. Do NOT use for sequential forge commands (/forge, /forge-plan, /forge-doc), for debugging stuck forge-team sessions (use agent-teams-debugger instead), or for general document writing without the forge workflow."
+description: "Internal orchestration logic for the /forge-team command. Do not trigger on general questions about agent teams, team mode, or parallel exploration — only when the /forge-team command is explicitly invoked."
 ---
 
 # forge-team-orchestrator

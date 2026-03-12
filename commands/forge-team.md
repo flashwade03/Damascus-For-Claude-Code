@@ -1,19 +1,20 @@
 ---
 name: forge-team
-description: Damascus Agent Teams — multiple planners debate drafts, reviewers debate reviews, a scribe handles all writes. Teammates stay alive across rounds.
+description: Damascus Agent Teams — parallel explorers investigate, a single planner synthesizes, a scribe writes, reviewers judge independently. Teammates stay alive across rounds.
 argument-hint: "[-n max] [-o path] <task description>"
 ---
 
 # Forge Team
 
-Forge a document using Agent Teams. Planners debate drafts together, reviewers discuss reviews, and a dedicated scribe handles all document writes. Teammates persist across rounds — no resume needed.
+Forge a document using Agent Teams. Parallel explorers investigate different codebase areas, a single planner synthesizes findings into a plan, a scribe writes the document, and reviewers (Claude/Gemini/OpenAI) judge independently. Teammates persist across rounds — no resume needed.
 
 ## Workflow
 
-1. **Planners** (team) → Explore codebase, draft by domain area, discuss and merge
-2. **Scribe** → Polish and write document, inject metadata
-3. **Reviewers** (team) → Run external reviews (Gemini/OpenAI scripts), discuss together, reach verdict
-4. **Loop** → If NEEDS_REVISION and rounds remaining, planners revise with consolidated feedback
+1. **Explorers** (N) → Investigate assigned codebase areas, report findings to Planner
+2. **Planner** (1) → Synthesize explorer findings, create plan via ExitPlanMode
+3. **Scribe** → Polish and write document, inject metadata
+4. **Reviewers** → Run reviews independently (Claude/Gemini/OpenAI), send to Lead who determines verdict
+5. **Loop** → If NEEDS_REVISION and rounds remaining, planner revises with consolidated feedback
 
 ## Usage
 
