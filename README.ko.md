@@ -235,6 +235,8 @@ enable_claude_review: true
 
 ## 변경 이력
 
+- **4.0.4** — 스킬 description을 커맨드 전용 트리거로 축소, forge-team 커맨드를 Explorer + Single Planner 아키텍처에 맞게 수정
+- **4.0.3** — 스킬 YAML frontmatter 수정: kebab-case 이름, description 따옴표 처리로 파싱 에러 해결
 - **4.0.2** — ForgeTeamOrchestrator 스킬 description 최적화 (역할 설명, 트리거 키워드, 오발동 방지 조건 추가)
 - **4.0.1** — Explorer 크로스 폴리네이션 수정 (Planner 매개), 조건부 리뷰어 스폰 (활성화된 리뷰어만 생성)
 - **4.0.0** — Agent Teams 모드 (`/forge-team`): 병렬 Explorer + 전담 Planner + Scribe + 독립 Reviewer를 라이브 팀원으로 운용. resume 없이 라운드 간 전체 컨텍스트 보존. [v3 vs v4 비교](docs/v4-comparison/)

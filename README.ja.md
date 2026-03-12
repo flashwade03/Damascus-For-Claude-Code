@@ -235,6 +235,8 @@ enable_claude_review: true
 
 ## 変更履歴
 
+- **4.0.4** — スキルdescriptionをコマンド専用トリガーに縮小、forge-teamコマンドをExplorer + Single Plannerアーキテクチャに合わせて修正
+- **4.0.3** — スキルYAMLフロントマター修正：kebab-case名、descriptionの引用符処理でパースエラー解消
 - **4.0.2** — ForgeTeamOrchestratorスキルのdescription最適化（役割説明、トリガーキーワード、誤発動防止条件を追加）
 - **4.0.1** — Explorerクロスポリネーション修正（Planner仲介）、条件付きレビュアースポーン（有効なレビュアーのみ生成）
 - **4.0.0** — Agent Teamsモード（`/forge-team`）：並列Explorer＋専任Planner＋Scribe＋独立Reviewerをライブチームメイトとして運用。resumeなしでラウンド間の完全なコンテキスト保持。[v3 vs v4比較](docs/v4-comparison/)
