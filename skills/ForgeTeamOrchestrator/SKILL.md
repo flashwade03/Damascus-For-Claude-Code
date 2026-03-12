@@ -71,18 +71,18 @@ If **no reviewers are enabled**, skip team creation — save the document direct
 - **planner**: Use stronger models (sonnet/opus) — synthesizes findings into a coherent plan.
 - **Other roles**: Lead decides based on complexity.
 
-Record your decisions — you will use these exact values in Step 6:
+Record your decisions — you will use these exact values in Step 6. Only include reviewers that are **enabled** in settings:
 ```
 Model decisions:
 - explorers: [haiku | sonnet | opus]
 - planner: [haiku | sonnet | opus]
 - scribe: [haiku | sonnet | opus]
-- reviewer-claude: [haiku | sonnet | opus]
-- reviewer-gemini: haiku
-- reviewer-openai: haiku
+- reviewer-claude: [haiku | sonnet | opus]  ← only if enable_claude_review: true
+- reviewer-gemini: haiku                     ← only if enable_gemini_review: true
+- reviewer-openai: haiku                     ← only if enable_openai_review: true
 ```
 
-Reviewer count — spawn one teammate per enabled reviewer (Claude, Gemini, OpenAI). Max 3.
+Reviewer count — spawn one teammate per **enabled** reviewer only. Do NOT spawn disabled reviewers.
 Scribe is always 1.
 
 ### 4. Resolve Output Path
@@ -149,7 +149,9 @@ Agent(
 )
 ```
 
-**Reviewer-claude** — `subagent_type: "Explore"`:
+**Reviewers** — Only spawn reviewers that are **enabled** in settings (Step 2). Skip disabled ones entirely — do not spawn them.
+
+Reviewer-claude (only if `enable_claude_review: true`):
 ```
 Agent(
   team_name: "damascus-forge",
@@ -160,7 +162,7 @@ Agent(
 )
 ```
 
-**Reviewer-gemini, reviewer-openai** — `subagent_type: "Explore"`, always haiku:
+Reviewer-gemini (only if `enable_gemini_review: true`):
 ```
 Agent(
   team_name: "damascus-forge",
@@ -170,12 +172,22 @@ Agent(
   prompt: [EXACT text from ## Reviewer — Gemini spawn prompt code block]
 )
 ```
-Only spawn if enabled in settings.
+
+Reviewer-openai (only if `enable_openai_review: true`):
+```
+Agent(
+  team_name: "damascus-forge",
+  name: "reviewer-openai",
+  subagent_type: "Explore",
+  model: "haiku",
+  prompt: [EXACT text from ## Reviewer — OpenAI spawn prompt code block]
+)
+```
 
 **Verification**: After spawning, the prompts in each Agent call must match the file content. Key checks:
 - Planner: "call ExitPlanMode to submit your plan to Lead"
 - Planner must have `mode: "plan"` set
-- Explorers: "report your final findings to 'planner'"
+- Explorers: "report findings to 'planner'" and "preliminary and final"
 - Reviewers: "review independently" and "Lead collects all reviews and determines the verdict"
 - No prompt should contain "COORDINATOR" or "coordinator"
 
@@ -199,8 +211,9 @@ For detailed step-by-step procedures and tool invocations for each round phase, 
   │                                                              │
   │  Lead ──msg──▶ Planner (task + explorer list)                │
   │  Planner ──msg──▶ Explorers (assign areas)                   │
-  │  Explorers ◄──msg──▶ Explorers (discuss findings)            │
-  │  Explorers ──msg──▶ Planner (report findings)                │
+  │  Explorers ──msg──▶ Planner (preliminary findings)           │
+  │  Planner ──msg──▶ Explorers (cross-findings + gap check)     │
+  │  Explorers ──msg──▶ Planner (final findings)                 │
   │  Planner ──ExitPlanMode──▶ Lead (plan_approval_request)      │
   │  Lead ──plan_approval_response──▶ Planner (approve)          │
   │                                                              │

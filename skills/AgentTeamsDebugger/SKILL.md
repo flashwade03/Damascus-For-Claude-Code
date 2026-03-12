@@ -1,6 +1,6 @@
 ---
 name: Agent Teams Debugger
-description: This skill should be used when the user reports that a /forge-team session is stuck, not progressing, or producing unexpected behavior. Also use when the user says "debug agent teams", "team is stuck", "messages not arriving", "planner won't submit", "reviewers not responding", or asks to diagnose an Agent Teams issue. Provides diagnostic procedures and known failure patterns for Claude Code Agent Teams.
+description: Use this skill to diagnose and fix problems with Damascus /forge-team Agent Teams sessions. Trigger whenever the user mentions forge-team, agent teams, or damascus-forge AND describes something wrong, stuck, broken, not working, hanging, failing, erroring, or needing investigation. Also trigger for inbox inspection requests (team-lead.json, planner.json, lead.json), message routing issues, ExitPlanMode problems, health checks on team state, or recovery/restart questions. Covers Korean and English — "멈춰", "안 돼", "이상해", "망가졌다", "확인해줘", "디버깅" all qualify. Do NOT trigger for general forge/forge-plan usage, plugin installation, prompt improvement, architecture redesign, or Agent SDK questions — only for diagnosing why an active or recent forge-team session went wrong.
 ---
 
 # Agent Teams Debugger
@@ -13,7 +13,7 @@ When the user reports a stuck session, identify which phase is stuck:
 
 | Symptom | Likely Phase | Jump To |
 |---------|-------------|---------|
-| "Nothing happening after start" | Phase 1 — Planning | [Planner Issues](#planner-issues) |
+| "Nothing happening after start" | Phase 0 or 1 | [Setup Phase Failures](#setup-phase-failures) first, then [Planner Issues](#planner-issues) |
 | "Explorers finished but plan not submitted" | Phase 1 — ExitPlanMode | [ExitPlanMode Failures](#exitplanmode-failures) |
 | "Plan submitted but file not written" | Phase 2 — Writing | [Scribe Issues](#scribe-issues) |
 | "File written but reviews not arriving" | Phase 3 — Review | [Message Routing](#message-routing) |
@@ -22,7 +22,7 @@ When the user reports a stuck session, identify which phase is stuck:
 
 ## Full Diagnostic Procedure
 
-Run these steps in order. Stop when you find the issue.
+Run these steps in order. At each step, also **rule out other known failures** — explicitly note which patterns you checked and eliminated. This differential diagnosis prevents misattribution when symptoms overlap (e.g., "nothing happening" could be Setup Phase failure OR ExitPlanMode failure).
 
 ### Step 1: Check Team Exists
 
@@ -47,6 +47,11 @@ cat ~/.claude/teams/damascus-forge/inboxes/planner.json | jq '.[] | select(.read
 
 Key insight: **Lead's inbox is `team-lead.json`**, NOT `lead.json`. This is the #1 routing bug — see [Message Routing](#message-routing).
 
+**Differential checks at this step:**
+- If `lead.json` exists → routing bug (F-001), jump to [Message Routing](#message-routing)
+- If only `team-lead.json` + `planner.json` exist (no explorer/scribe/reviewer inboxes) → [Setup Phase Failures](#setup-phase-failures)
+- If explorer inboxes exist but `team-lead.json` has no `plan_approval_request` → [ExitPlanMode Failures](#exitplanmode-failures)
+
 ### Step 3: Trace Message Flow
 
 ```bash
@@ -63,6 +68,26 @@ Look for:
 - Missing expected messages (e.g., explorer findings never sent to planner)
 
 ## Known Failure Patterns
+
+### Setup Phase Failures
+
+**Lead skips spawning teammates (F-008)** — Explorers, scribe, or reviewers never created
+
+The Lead must spawn all teammates during the Setup Phase before entering the Round Flow. If it jumps directly to sending PLANNING PHASE to the planner without spawning explorers, the planner has no one to assign work to and stalls.
+
+**Diagnosis:**
+```bash
+# Check which inboxes exist — missing inboxes = missing teammates
+ls ~/.claude/teams/damascus-forge/inboxes/
+
+# Expected for a healthy session: team-lead.json, planner.json, explorer-1.json,
+# explorer-2.json (or more), scribe.json, reviewer-claude.json, etc.
+# If only team-lead.json + planner.json exist → Setup Phase was skipped
+```
+
+**Malformed task message** — even if teammates are spawned, the PLANNING PHASE message to the planner must include the explorer list, mode, and ExitPlanMode reinforcement. Compare the actual message against the format in `skills/ForgeTeamOrchestrator/references/round-flow.md`.
+
+**Fix:** Delete team and restart. Verify the Lead follows ForgeTeamOrchestrator's Setup Phase (spawn all teammates) before entering Round 1.
 
 ### Message Routing
 
@@ -147,6 +172,8 @@ See [references/diagnostic-commands.md](references/diagnostic-commands.md) for c
 |---------|----------|
 | Wrong inbox routing | Fix prompts, restart session |
 | ExitPlanMode not called | Cannot fix mid-session — restart with corrected prompt |
+| Setup Phase skipped | `TeamDelete("damascus-forge")`, restart — verify Lead spawns all teammates before Round 1 |
+| Malformed task message | Restart — check message format against round-flow.md |
 | Single teammate stuck | Send a nudge message via SendMessage |
 | Team state corrupted | `TeamDelete("damascus-forge")`, restart session |
 | Max rounds reached but not approved | Normal behavior — report final verdict to user |

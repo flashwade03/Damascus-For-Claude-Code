@@ -1,6 +1,6 @@
 {
   "name": "damascus",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Workflow that forges documents through iterative multi-LLM review",
   "type": "module",
   "scripts": {

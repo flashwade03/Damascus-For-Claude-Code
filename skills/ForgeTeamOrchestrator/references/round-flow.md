@@ -21,9 +21,11 @@ Explorers: [explorer-1, explorer-2, explorer-3]
 
 Instructions:
 1. Assign exploration areas to each explorer — be specific about what to investigate
-2. Collect findings from all explorers — wait until all have reported
-3. Synthesize findings into a comprehensive plan
-4. Call ExitPlanMode to submit your plan to Lead",
+2. Collect preliminary findings from all explorers — wait until all have reported
+3. Cross-pollinate: share relevant findings between explorers, ask each to check for gaps or contradictions based on peers' work
+4. Collect final findings after cross-pollination
+5. Synthesize findings into a comprehensive plan
+6. Call ExitPlanMode to submit your plan to Lead",
   summary: "Round 1 planning"
 )
 ```

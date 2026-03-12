@@ -171,3 +171,43 @@ echo '{"file_path": "/tmp/test.md"}' | CLAUDE_SESSION_ID=test123 bash scripts/pl
 
 ### Fix
 Verify the scribe's metadata injection command matches the format in `round-flow.md` Phase 2.
+
+---
+
+## F-008: Setup Phase Skipped (Teammates Never Spawned)
+
+**Severity:** Critical — Session hangs in Phase 1
+**Discovered:** 2026-03-12, during eval testing
+
+### Symptoms
+- Session starts but nothing happens
+- Only `team-lead.json` and `planner.json` inboxes exist
+- No explorer, scribe, or reviewer inboxes
+- Planner received task but has no explorers to assign work to
+
+### Root Cause
+The Lead jumped directly to sending PLANNING PHASE to the planner without first spawning all required teammates (explorers, scribe, reviewers) during the Setup Phase. The planner's workflow requires an explorer list in the task message to assign investigation areas. Without explorers, it stalls.
+
+This can also manifest as a **malformed task message** — the Lead spawns teammates but sends an incomplete message that lacks the explorer list, mode, or ExitPlanMode reinforcement. Compare the actual message to the required format in `skills/ForgeTeamOrchestrator/references/round-flow.md`.
+
+### Diagnosis
+```bash
+# Check which inboxes exist
+ls ~/.claude/teams/damascus-forge/inboxes/
+
+# Expected: team-lead.json, planner.json, explorer-1.json, explorer-2.json, scribe.json, reviewer-*.json
+# If only team-lead.json + planner.json → Setup Phase was skipped
+
+# Check what message the planner received
+cat ~/.claude/teams/damascus-forge/inboxes/planner.json | jq '.[0].content'
+# Should include "Explorers: [explorer-1, explorer-2, ...]" and "ExitPlanMode"
+```
+
+### Fix
+Delete team and restart. Ensure the Lead follows ForgeTeamOrchestrator's Setup Phase:
+1. Spawn all teammates first (explorers, planner, scribe, reviewers)
+2. Use the structured task message format from round-flow.md
+3. Include explorer list and ExitPlanMode instruction in the planner message
+
+### Prevention
+Verify the ForgeTeamOrchestrator SKILL.md Setup Phase instructions are being followed. The Lead should never send Phase messages before all teammates are spawned.
