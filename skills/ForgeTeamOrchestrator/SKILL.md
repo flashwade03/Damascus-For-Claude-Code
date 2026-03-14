@@ -1,6 +1,6 @@
 ---
 name: forge-team-orchestrator
-description: "Internal orchestration logic for the /forge-team command. Do not trigger on general questions about agent teams, team mode, or parallel exploration — only when the /forge-team command is explicitly invoked."
+description: "Internal orchestration procedure for the /forge-team slash command. Only activates when the forge-team command handler explicitly references this skill by name."
 ---
 
 # forge-team-orchestrator

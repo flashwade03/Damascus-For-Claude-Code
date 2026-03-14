@@ -1,6 +1,6 @@
 {
   "name": "damascus",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "Forge documents through iterative multi-LLM review — like Damascus steel, stronger through repeated folding.",
   "author": {
     "name": "flashwade03"
