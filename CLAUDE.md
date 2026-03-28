@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Claude Code plugin (v4.0.5) that forges documents through iterative multi-LLM review. Published on the Claude Code marketplace as `damascus@planner`.
+A Claude Code plugin (v4.0.6) that forges documents through iterative multi-LLM review. Published on the Claude Code marketplace as `damascus@planner`.
 
 ## Project Structure
 
@@ -72,7 +72,7 @@ After `dev:enable`, restart Claude Code session for changes to take effect.
 7. **Judge** — APPROVED or NEEDS_REVISION
 8. **Loop** — Resume author agent with consolidated feedback
 
-## Current Status (v4.0.5)
+## Current Status (v4.0.6)
 
 - Agent Teams mode (`/forge-team`) with Explorer + single Planner architecture
 - Planner-mediated cross-pollination between explorers (v4.0.1)
@@ -81,6 +81,7 @@ After `dev:enable`, restart Claude Code session for changes to take effect.
 - Fix skill frontmatter: kebab-case names, quote descriptions to prevent YAML parse errors (v4.0.3)
 - Narrow skill descriptions to command-specific triggers, fix forge-team command to match current architecture (v4.0.4)
 - Remove trigger-inducing keywords from ForgeTeamOrchestrator skill description to prevent false activation (v4.0.5)
+- Shorten AgentTeamsDebugger skill description to fit 250-char context cap (v4.0.6)
 - Sequential mode (`/forge`, `/forge-plan`, `/forge-doc`) unchanged from v3
 - Three reviewer backends (Claude, Gemini, OpenAI)
 - AgentTeamsDebugger skill for diagnosing stuck sessions

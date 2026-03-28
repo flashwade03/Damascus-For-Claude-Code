@@ -1,6 +1,6 @@
 ---
 name: agent-teams-debugger
-description: "Diagnose and fix problems with Damascus /forge-team sessions. Only trigger when the user explicitly mentions forge-team or damascus-forge AND describes something stuck, broken, or needing debugging. Do not trigger on general agent teams questions or non-Damascus issues."
+description: "Diagnose stuck or broken Damascus /forge-team sessions. Trigger only when user mentions forge-team or damascus-forge AND describes a problem. Not for general agent teams questions or non-Damascus issues."
 ---
 
 # agent-teams-debugger
